@@ -4,23 +4,32 @@
 import PackageDescription
 
 let package = Package(
-    name: "SandboxDrop",
+    name: "PermissionFlow",
     platforms: [
-        .macOS(.v13)
+        .macOS(.v13),
+        .iOS(.v16)
     ],
     products: [
         .library(
-            name: "SandboxDrop",
-            targets: ["SandboxDrop"]
+            name: "SystemSettingsKit",
+            targets: ["SystemSettingsKit"]
+        ),
+        .library(
+            name: "PermissionFlow",
+            targets: ["PermissionFlow"]
         ),
     ],
     targets: [
         .target(
-            name: "SandboxDrop"
+            name: "SystemSettingsKit"
+        ),
+        .target(
+            name: "PermissionFlow",
+            dependencies: ["SystemSettingsKit"]
         ),
         .testTarget(
-            name: "SandboxDropTests",
-            dependencies: ["SandboxDrop"]
+            name: "PermissionFlowTests",
+            dependencies: ["PermissionFlow", "SystemSettingsKit"]
         ),
     ]
 )

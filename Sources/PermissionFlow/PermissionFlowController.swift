@@ -1,35 +1,36 @@
+#if os(macOS)
 import AppKit
 import Combine
+import SystemSettingsKit
 import SwiftUI
 
 @available(macOS 13.0, *)
 @MainActor
-public final class SandboxDropController: ObservableObject {
+public final class PermissionFlowController: ObservableObject {
     /// The package exposes a single active floating panel at a time so opening
     /// a second permission flow closes the previous panel automatically.
-    private static var activeController: SandboxDropController?
+    private static var activeController: PermissionFlowController?
     private let systemSettingsBundleIdentifier = "com.apple.systempreferences"
 
     /// Apps currently represented in the floating panel.
     @Published public private(set) var droppedApps: [URL]
 
     /// The permission pane currently being guided.
-    @Published public private(set) var currentPane: SandboxPermissionPane?
+    @Published public private(set) var currentPane: PermissionFlowPane?
 
     /// Drives the visibility of the "reopen settings" action.
     @Published var isSettingsFrontmost = false
 
     public var onDrop: ((URL) -> Void)?
 
-    private let configuration: SandboxDropConfiguration
-    private let navigator = SettingsNavigator()
+    private let configuration: PermissionFlowConfiguration
     private let tracker = SettingsWindowTracker()
 
     private var panel: FloatingDropPanel?
     private var pendingLaunchSourceFrame: CGRect?
     private var cancellables = Set<AnyCancellable>()
 
-    public init(configuration: SandboxDropConfiguration = .init()) {
+    public init(configuration: PermissionFlowConfiguration = .init()) {
         self.configuration = configuration
         self.droppedApps = configuration.requiredAppURLs.uniqueAppURLs()
 
@@ -40,7 +41,7 @@ public final class SandboxDropController: ObservableObject {
 
     /// Opens the requested privacy pane and starts the floating guidance flow.
     public func authorize(
-        pane: SandboxPermissionPane,
+        pane: PermissionFlowPane,
         suggestedAppURLs: [URL] = [],
         sourceFrameInScreen: CGRect? = nil
     ) {
@@ -49,12 +50,7 @@ public final class SandboxDropController: ObservableObject {
         currentPane = pane
         pendingLaunchSourceFrame = sourceFrameInScreen
         mergeDroppedApps(with: suggestedAppURLs)
-        navigator.openSettings(for: pane)
-
-        guard pane.supportsFloatingPanel else {
-            closePanel()
-            return
-        }
+        SystemSettings.open(url: pane.settingsURL)
 
         Self.activeController = self
         showPanel()
@@ -65,10 +61,7 @@ public final class SandboxDropController: ObservableObject {
     /// already known, the panel is positioned or animated into place at once.
     public func showPanel() {
         if panel == nil {
-            panel = FloatingDropPanel(
-                controller: self,
-                size: configuration.panelSize
-            )
+            panel = FloatingDropPanel(controller: self)
         }
 
         guard let panel else { return }
@@ -132,13 +125,13 @@ public final class SandboxDropController: ObservableObject {
     /// Keeps System Settings visually present whenever the floating panel is
     /// clicked or momentarily considered for focus.
     func keepSettingsVisible() {
-        navigator.activateSettings()
+        SystemSettings.activate()
         panel?.orderFrontRegardless()
     }
 
     func reopenCurrentSettingsPane() {
         guard let currentPane else { return }
-        navigator.openSettings(for: currentPane)
+        SystemSettings.open(url: currentPane.settingsURL)
         panel?.orderFrontRegardless()
     }
 
@@ -184,10 +177,10 @@ public final class SandboxDropController: ObservableObject {
         guard let panel else { return }
 
         if let sourceFrame = pendingLaunchSourceFrame {
-            panel.present(from: sourceFrame, to: settingsFrame, topInset: configuration.topInset)
+            panel.present(from: sourceFrame, to: settingsFrame)
             pendingLaunchSourceFrame = nil
         } else {
-            panel.snap(to: settingsFrame, topInset: configuration.topInset)
+            panel.snap(to: settingsFrame)
         }
     }
 
@@ -215,3 +208,4 @@ private extension Array where Element == URL {
         contains(where: { $0.standardizedFileURL.path == url.standardizedFileURL.path })
     }
 }
+#endif

@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		E01C97E12F91CE6900B95F88 /* SandboxDrop in Frameworks */ = {isa = PBXBuildFile; productRef = E01C97E02F91CE6900B95F88 /* SandboxDrop */; };
+		E01C97E12F91CE6900B95F88 /* PermissionFlow in Frameworks */ = {isa = PBXBuildFile; platformFilter = macos; productRef = E01C97E02F91CE6900B95F88 /* PermissionFlow */; };
+		E0D8D0F42F91CE6900B95F88 /* SystemSettingsKit in Frameworks */ = {isa = PBXBuildFile; productRef = E0D8D0F32F91CE6900B95F88 /* SystemSettingsKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,7 +28,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E01C97E12F91CE6900B95F88 /* SandboxDrop in Frameworks */,
+				E01C97E12F91CE6900B95F88 /* PermissionFlow in Frameworks */,
+				E0D8D0F42F91CE6900B95F88 /* SystemSettingsKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,7 +72,8 @@
 			);
 			name = Example;
 			packageProductDependencies = (
-				E01C97E02F91CE6900B95F88 /* SandboxDrop */,
+				E01C97E02F91CE6900B95F88 /* PermissionFlow */,
+				E0D8D0F32F91CE6900B95F88 /* SystemSettingsKit */,
 			);
 			productName = Example;
 			productReference = E01C97D12F91CE5400B95F88 /* Example.app */;
@@ -277,12 +280,12 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = SandboxDropExample;
-				INFOPLIST_KEY_NSAppleEventsUsageDescription = "SandboxDrop demo may open and guide System Settings for authorization.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "SandboxDrop demo uses camera permission for authorization flow testing.";
+				INFOPLIST_KEY_CFBundleDisplayName = PermissionFlowExample;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "PermissionFlow demo may open and guide System Settings for authorization.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "PermissionFlow demo uses camera permission for authorization flow testing.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SandboxDrop demo uses microphone permission for authorization flow testing.";
-				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "SandboxDrop demo uses screen recording permission for authorization flow testing.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "PermissionFlow demo uses microphone permission for authorization flow testing.";
+				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "PermissionFlow demo uses screen recording permission for authorization flow testing.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -293,11 +296,14 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -324,12 +330,12 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = SandboxDropExample;
-				INFOPLIST_KEY_NSAppleEventsUsageDescription = "SandboxDrop demo may open and guide System Settings for authorization.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "SandboxDrop demo uses camera permission for authorization flow testing.";
+				INFOPLIST_KEY_CFBundleDisplayName = PermissionFlowExample;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "PermissionFlow demo may open and guide System Settings for authorization.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "PermissionFlow demo uses camera permission for authorization flow testing.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SandboxDrop demo uses microphone permission for authorization flow testing.";
-				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "SandboxDrop demo uses screen recording permission for authorization flow testing.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "PermissionFlow demo uses microphone permission for authorization flow testing.";
+				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "PermissionFlow demo uses screen recording permission for authorization flow testing.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -340,11 +346,14 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -379,9 +388,13 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		E01C97E02F91CE6900B95F88 /* SandboxDrop */ = {
+		E01C97E02F91CE6900B95F88 /* PermissionFlow */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = SandboxDrop;
+			productName = PermissionFlow;
+		};
+		E0D8D0F32F91CE6900B95F88 /* SystemSettingsKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SystemSettingsKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

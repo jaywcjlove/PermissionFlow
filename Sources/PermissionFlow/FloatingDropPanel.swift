@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import QuartzCore
 import SwiftUI
@@ -5,9 +6,10 @@ import SwiftUI
 @available(macOS 13.0, *)
 @MainActor
 final class FloatingDropPanel: NSPanel {
-    private weak var panelController: SandboxDropController?
-    private let hostingView: NSHostingView<SandboxDropPanelView>
-    private let sizingView: NSHostingView<SandboxDropPanelView>
+    private weak var panelController: PermissionFlowController?
+    private let hostingView: NSHostingView<PermissionFlowPanelView>
+    private let sizingView: NSHostingView<PermissionFlowPanelView>
+    private let initialPanelWidth: CGFloat = 420
 
     /// System Settings has a leading sidebar. Matching the trailing content
     /// area width keeps the floating panel visually aligned with the pane that
@@ -29,13 +31,13 @@ final class FloatingDropPanel: NSPanel {
     private var launchToFrame = NSRect.zero
     private var isAnimatingLaunch = false
 
-    init(controller: SandboxDropController, size: CGSize) {
+    init(controller: PermissionFlowController) {
         panelController = controller
-        let panelView = SandboxDropPanelView(controller: controller)
+        let panelView = PermissionFlowPanelView(controller: controller)
         hostingView = NSHostingView(rootView: panelView)
         sizingView = NSHostingView(rootView: panelView)
         super.init(
-            contentRect: CGRect(origin: .zero, size: size),
+            contentRect: CGRect(origin: .zero, size: CGSize(width: initialPanelWidth, height: minimumPanelHeight)),
             styleMask: [.titled, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -58,7 +60,7 @@ final class FloatingDropPanel: NSPanel {
 
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         contentView = hostingView
-        setContentSize(CGSize(width: size.width, height: measuredPanelHeight(for: size.width)))
+        setContentSize(CGSize(width: initialPanelWidth, height: measuredPanelHeight(for: initialPanelWidth)))
     }
 
     /// The panel intentionally stays non-activating so System Settings remains
@@ -97,9 +99,9 @@ final class FloatingDropPanel: NSPanel {
         orderFrontRegardless()
     }
 
-    func present(from sourceFrameInScreen: CGRect, to settingsFrame: CGRect, topInset: CGFloat) {
+    func present(from sourceFrameInScreen: CGRect, to settingsFrame: CGRect) {
         stopLaunchAnimation()
-        let targetFrame = targetFrame(for: settingsFrame, topInset: topInset)
+        let targetFrame = targetFrame(for: settingsFrame)
 
         guard sourceFrameInScreen.isEmpty == false else {
             isAnimatingLaunch = false
@@ -137,8 +139,8 @@ final class FloatingDropPanel: NSPanel {
         }
     }
 
-    func snap(to settingsFrame: CGRect, topInset: CGFloat) {
-        let target = targetFrame(for: settingsFrame, topInset: topInset)
+    func snap(to settingsFrame: CGRect) {
+        let target = targetFrame(for: settingsFrame)
         if isAnimatingLaunch {
             // Tracking updates can arrive during the launch. Updating the final
             // destination preserves the motion instead of abruptly snapping.
@@ -151,7 +153,7 @@ final class FloatingDropPanel: NSPanel {
         orderFrontRegardless()
     }
 
-    private func targetFrame(for settingsFrame: CGRect, topInset _: CGFloat) -> CGRect {
+    private func targetFrame(for settingsFrame: CGRect) -> CGRect {
         let screenFrame = NSScreen.screens
             .first(where: { $0.frame.intersects(settingsFrame) })?
             .visibleFrame ?? settingsFrame
@@ -249,3 +251,4 @@ final class FloatingDropPanel: NSPanel {
         )
     }
 }
+#endif

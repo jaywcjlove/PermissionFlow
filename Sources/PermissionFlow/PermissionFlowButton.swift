@@ -1,19 +1,20 @@
+#if os(macOS)
 import SwiftUI
 
 @available(macOS 13.0, *)
-public struct SandboxDropButton: View {
-    @StateObject private var controller: SandboxDropController
-    private let pane: SandboxPermissionPane
+public struct PermissionFlowButton: View {
+    @StateObject private var controller: PermissionFlowController
+    private let pane: PermissionFlowPane
     private let suggestedAppURLs: [URL]
     private let title: String
 
     public init(
         title: String = "授权",
-        pane: SandboxPermissionPane,
+        pane: PermissionFlowPane,
         suggestedAppURLs: [URL] = [],
-        configuration: SandboxDropConfiguration = .init()
+        configuration: PermissionFlowConfiguration = .init()
     ) {
-        _controller = StateObject(wrappedValue: SandboxDropController(configuration: configuration))
+        _controller = StateObject(wrappedValue: PermissionFlowController(configuration: configuration))
         self.pane = pane
         self.suggestedAppURLs = suggestedAppURLs
         self.title = title
@@ -36,3 +37,4 @@ public struct SandboxDropButton: View {
         return CGRect(x: mouse.x - 16, y: mouse.y - 16, width: 32, height: 32)
     }
 }
+#endif

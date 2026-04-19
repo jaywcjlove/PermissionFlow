@@ -1,8 +1,9 @@
+#if os(macOS)
 import SwiftUI
 
 @available(macOS 13.0, *)
-struct SandboxDropPanelView: View {
-    @ObservedObject var controller: SandboxDropController
+struct PermissionFlowPanelView: View {
+    @ObservedObject var controller: PermissionFlowController
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -31,12 +32,10 @@ struct SandboxDropPanelView: View {
 
     /// Keeps the header logic isolated from the drag card layout.
     private var header: some View {
-        HStack(alignment: .top) {
-            Text(controller.currentPane?.displayName ?? "Sandbox Permission")
+        HStack(alignment: .top, spacing: 3) {
+            Text("Sandbox Permission")
                 .font(.system(size: 17, weight: .semibold))
-
             Spacer()
-
             if controller.isSettingsFrontmost == false {
                 Button {
                     controller.reopenCurrentSettingsPane()
@@ -61,3 +60,4 @@ struct SandboxDropPanelView: View {
         }
     }
 }
+#endif

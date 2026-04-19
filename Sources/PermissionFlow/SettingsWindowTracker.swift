@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 @preconcurrency import ApplicationServices
 import CoreGraphics
@@ -298,3 +299,4 @@ final class SettingsWindowTracker {
         onTrackingEnded?()
     }
 }
+#endif
