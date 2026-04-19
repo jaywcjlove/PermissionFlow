@@ -43,6 +43,8 @@
 PermissionFlow
 ===
 
+<img alt="PermissionFlow" src="https://github.com/user-attachments/assets/906a643d-07e5-4889-85f4-858f2b03de07" />
+
 `PermissionFlow` 是一个面向 Apple 平台应用的 Swift Package，包含两个职责明确的子库：
 
 - `PermissionFlow`：仅支持 macOS 的悬浮授权引导库
@@ -50,7 +52,6 @@ PermissionFlow
 
 它会自动打开对应的系统隐私页；对于支持拖拽式授权的权限页，还会显示一个悬浮辅助窗口，跟随 `System Settings` 窗口移动，并允许用户直接把当前 `.app` 拖入授权列表。
 
-<img alt="PermissionFlow" src="https://github.com/user-attachments/assets/906a643d-07e5-4889-85f4-858f2b03de07" />
 
 ## 功能特性
 

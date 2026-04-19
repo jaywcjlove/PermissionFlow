@@ -43,6 +43,8 @@
 PermissionFlow
 ===
 
+<img alt="PermissionFlow" src="https://github.com/user-attachments/assets/906a643d-07e5-4889-85f4-858f2b03de07" />
+
 `PermissionFlow` is a Swift Package for Apple platform apps that bundles two focused libraries:
 
 - `PermissionFlow`: macOS-only floating guidance for drag-based privacy authorization
@@ -50,7 +52,6 @@ PermissionFlow
 
 It opens the correct privacy page automatically and, for panes that support drag-based authorization, shows a floating helper panel that follows the `System Settings` window and lets the user drag the current `.app` bundle into the permission list.
 
-<img alt="PermissionFlow" src="https://github.com/user-attachments/assets/906a643d-07e5-4889-85f4-858f2b03de07" />
 
 ## Features
 
