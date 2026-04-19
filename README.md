@@ -36,7 +36,7 @@
 </div>
 <hr>
 
-[中文](./README.zh.md) • [Installation](#installation) • [Public API](#public-api)
+[中文](./README.zh.md) • [Installation](#installation) • [Public API](#public-api) • [System Settings URL Scheme](#system-settings-url-scheme)
 
 <hr>
 
