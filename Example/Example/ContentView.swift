@@ -24,7 +24,7 @@ struct ContentView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 24)
             }
-            .frame(minWidth: 920, minHeight: 720)
+            .frame(minWidth: 820, minHeight: 420)
             .navigationTitle("PermissionFlow Demo")
         }
 #else
@@ -44,18 +44,18 @@ struct ContentView: View {
 
     private var heroSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("PermissionFlow / SystemSettingsKit 示例")
+            Text("PermissionFlow / SystemSettingsKit Example")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
             VStack(alignment: .leading, spacing: 6) {
 #if os(macOS)
-                Text("每个按钮都会打开对应的系统设置隐私页。仅支持拖拽添加应用的权限页才会显示悬浮授权窗口，默认建议拖入当前 Example.app。")
+                Text("Each button opens the corresponding system settings privacy page. Only permission pages that support drag-and-drop app addition will show the floating authorization window. It's recommended to drag in the current Example.app by default.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
-                Text("自动化、摄像头、麦克风、文件与文件夹这类系统原生不支持拖拽添加应用的权限页，只会打开设置界面，不显示悬浮框。")
+                Text("Permission pages like Automation, Camera, Microphone, and Files & Folders that don't natively support drag-and-drop app addition will only open the settings interface without showing the floating window.")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
 #else
-                Text("当前页面按平台拆分展示。iOS 侧只展示 `SystemSettingsKit` 可用的设置入口；`PermissionFlow` 仅支持 macOS。")
+                Text("Current page is split by platform. iOS side only shows available SystemSettingsKit entry points; PermissionFlow only supports macOS.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
 #endif
@@ -67,14 +67,14 @@ struct ContentView: View {
     private var settingsURLTestSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("System Settings URL 测试")
+                Text("System Settings URL Testing")
                     .font(.system(size: 24, weight: .bold))
 #if os(macOS)
-                Text("下面按平台拆分展示 `SystemSettingsKit` 的能力范围。macOS 区域用于测试 `SystemSettings-URLs-macOS` 风格的 deeplink；iOS 区域展示当前已封装的 iOS 设置入口。")
+                Text("Below shows the capabilities of `SystemSettingsKit` split by platform. The macOS area is for testing `SystemSettings-URLs-macOS` style deeplinks; the iOS area shows currently wrapped iOS settings entry points.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
 #else
-                Text("当前页面仅展示 iOS 可用的 `SystemSettingsKit` 示例。macOS 专属的 pane / anchor deeplink 与 `PermissionFlow` 授权引导不会在 iOS 中显示。")
+                Text("Current page only shows iOS available `SystemSettingsKit` examples. macOS-specific pane/anchor deeplinks and `PermissionFlow` authorization guidance won't be displayed on iOS.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
 #endif
@@ -82,121 +82,121 @@ struct ContentView: View {
 
 #if os(macOS)
             platformSectionHeader(
-                title: "macOS 示例",
-                subtitle: "面向 `System Settings` 的 pane identifier、anchor 与强类型跳转。"
+                title: "macOS Examples",
+                subtitle: "Pane identifier, anchor and strongly-typed navigation for `System Settings`."
             )
             settingsURLGroup(
-                title: "隐私与安全性",
+                title: "Privacy & Security",
                 buttons: {
-                    settingsURLButton(title: "隐私与安全性首页", subtitle: "跳转到 隐私与安全性 首页", symbolName: "lock.shield", tint: .gray) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.settings.PrivacySecurity.extension")) }
-                    settingsURLButton(title: "高级", subtitle: "跳转到 隐私与安全性 > 高级", symbolName: "gearshape.2", tint: .gray) { SystemSettings.open(.privacy(anchor: .advanced)) }
-                    settingsURLButton(title: "安全性", subtitle: "跳转到 隐私与安全性 > 安全性", symbolName: "shield", tint: .gray) { SystemSettings.open(.privacy(anchor: .security)) }
-                    settingsURLButton(title: "安全改进", subtitle: "跳转到 隐私与安全性 > 安全改进", symbolName: "shield.lefthalf.filled.badge.checkmark", tint: .green) { SystemSettings.open(.privacy(anchor: .securityImprovements)) }
-                    settingsURLButton(title: "文件保险箱", subtitle: "跳转到 隐私与安全性 > FileVault", symbolName: "lock.rectangle", tint: .blue) { SystemSettings.open(.privacy(anchor: .fileVault)) }
-                    settingsURLButton(title: "锁定模式", subtitle: "跳转到 隐私与安全性 > 锁定模式", symbolName: "lock.trianglebadge.exclamationmark", tint: .red) { SystemSettings.open(.privacy(anchor: .lockdownMode)) }
-                    settingsURLButton(title: "位置访问报告", subtitle: "跳转到 隐私与安全性 > 位置访问报告", symbolName: "location.viewfinder", tint: .orange) { SystemSettings.open(.privacy(anchor: .locationAccessReport)) }
-                    settingsURLButton(title: "广告", subtitle: "跳转到 隐私与安全性 > 广告", symbolName: "megaphone", tint: .orange) { SystemSettings.open(.privacy(anchor: .privacyAdvertising)) }
-                    settingsURLButton(title: "辅助功能", subtitle: "跳转到 隐私与安全性 > 辅助功能", symbolName: "figure.wave", tint: .blue) { SystemSettings.open(.privacy(anchor: .privacyAccessibility)) }
-                    settingsURLButton(title: "自动化", subtitle: "跳转到 隐私与安全性 > 自动化", symbolName: "apple.terminal.on.rectangle", tint: .brown) { SystemSettings.open(.privacy(anchor: .privacyAutomation)) }
-                    settingsURLButton(title: "App 管理", subtitle: "跳转到 隐私与安全性 > App 管理", symbolName: "shippingbox", tint: .brown) { SystemSettings.open(.privacy(anchor: .privacyAppBundles)) }
-                    settingsURLButton(title: "分析与改进", subtitle: "跳转到 隐私与安全性 > 分析与改进", symbolName: "chart.bar", tint: .cyan) { SystemSettings.open(.privacy(anchor: .privacyAnalytics)) }
-                    settingsURLButton(title: "音频捕获", subtitle: "跳转到 隐私与安全性 > 音频捕获", symbolName: "waveform", tint: .purple) { SystemSettings.open(.privacy(anchor: .privacyAudioCapture)) }
-                    settingsURLButton(title: "蓝牙", subtitle: "跳转到 隐私与安全性 > 蓝牙", symbolName: "bolt.horizontal.circle", tint: .blue) { SystemSettings.open(.privacy(anchor: .privacyBluetooth)) }
-                    settingsURLButton(title: "日历", subtitle: "跳转到 隐私与安全性 > 日历", symbolName: "calendar", tint: .red) { SystemSettings.open(.privacy(anchor: .privacyCalendars)) }
-                    settingsURLButton(title: "摄像头", subtitle: "跳转到 隐私与安全性 > 摄像头", symbolName: "camera", tint: .pink) { SystemSettings.open(.privacy(anchor: .privacyCamera)) }
-                    settingsURLButton(title: "联系人", subtitle: "跳转到 隐私与安全性 > 联系人", symbolName: "person.crop.circle.badge.checkmark", tint: .blue) { SystemSettings.open(.privacy(anchor: .privacyContacts)) }
-                    settingsURLButton(title: "开发者工具", subtitle: "跳转到 隐私与安全性 > 开发者工具", symbolName: "hammer", tint: .orange) { SystemSettings.open(.privacy(anchor: .privacyDevTools)) }
-                    settingsURLButton(title: "文件与文件夹", subtitle: "跳转到 隐私与安全性 > 文件与文件夹", symbolName: "folder", tint: .teal) { SystemSettings.open(.privacy(anchor: .privacyFilesAndFolders)) }
-                    settingsURLButton(title: "专注模式", subtitle: "跳转到 隐私与安全性 > 专注模式", symbolName: "moon.circle", tint: .indigo) { SystemSettings.open(.privacy(anchor: .privacyFocus)) }
-                    settingsURLButton(title: "家庭", subtitle: "跳转到 隐私与安全性 > 家庭", symbolName: "house", tint: .mint) { SystemSettings.open(.privacy(anchor: .privacyHomeKit)) }
-                    settingsURLButton(title: "输入监控", subtitle: "跳转到 隐私与安全性 > 输入监控", symbolName: "keyboard", tint: .mint) { SystemSettings.open(.privacy(anchor: .privacyListenEvent)) }
-                    settingsURLButton(title: "定位服务", subtitle: "跳转到 隐私与安全性 > 定位服务", symbolName: "location", tint: .orange) { SystemSettings.open(.privacy(anchor: .privacyLocationServices)) }
-                    settingsURLButton(title: "媒体与 Apple Music", subtitle: "跳转到 隐私与安全性 > 媒体与 Apple Music", symbolName: "music.note.list", tint: .red) { SystemSettings.open(.privacy(anchor: .privacyMedia)) }
-                    settingsURLButton(title: "麦克风", subtitle: "跳转到 隐私与安全性 > 麦克风", symbolName: "mic", tint: .red) { SystemSettings.open(.privacy(anchor: .privacyMicrophone)) }
-                    settingsURLButton(title: "动作与健身", subtitle: "跳转到 隐私与安全性 > 动作与健身", symbolName: "figure.walk", tint: .green) { SystemSettings.open(.privacy(anchor: .privacyMotion)) }
-                    settingsURLButton(title: "敏感内容警告", subtitle: "跳转到 隐私与安全性 > 敏感内容警告", symbolName: "exclamationmark.shield", tint: .pink) { SystemSettings.open(.privacy(anchor: .privacyNudityDetection)) }
-                    settingsURLButton(title: "钥匙串与通行密钥", subtitle: "跳转到 隐私与安全性 > 通行密钥访问", symbolName: "key", tint: .yellow) { SystemSettings.open(.privacy(anchor: .privacyPasskeyAccess)) }
-                    settingsURLButton(title: "照片", subtitle: "跳转到 隐私与安全性 > 照片", symbolName: "photo", tint: .purple) { SystemSettings.open(.privacy(anchor: .privacyPhotos)) }
-                    settingsURLButton(title: "提醒事项", subtitle: "跳转到 隐私与安全性 > 提醒事项", symbolName: "list.bullet", tint: .blue) { SystemSettings.open(.privacy(anchor: .privacyReminders)) }
-                    settingsURLButton(title: "远程桌面", subtitle: "跳转到 隐私与安全性 > 远程桌面", symbolName: "desktopcomputer.and.arrow.down", tint: .cyan) { SystemSettings.open(.privacy(anchor: .privacyRemoteDesktop)) }
-                    settingsURLButton(title: "屏幕录制", subtitle: "跳转到 隐私与安全性 > 屏幕录制", symbolName: "display", tint: .green) { SystemSettings.open(.privacy(anchor: .privacyScreenCapture)) }
-                    settingsURLButton(title: "语音识别", subtitle: "跳转到 隐私与安全性 > 语音识别", symbolName: "waveform.badge.mic", tint: .orange) { SystemSettings.open(.privacy(anchor: .privacySpeechRecognition)) }
-                    settingsURLButton(title: "系统服务", subtitle: "跳转到 隐私与安全性 > 系统服务", symbolName: "gearshape.2.fill", tint: .gray) { SystemSettings.open(.privacy(anchor: .privacySystemServices)) }
-                    settingsURLButton(title: "完全磁盘访问", subtitle: "跳转到 隐私与安全性 > 完全磁盘访问", symbolName: "externaldrive", tint: .indigo) { SystemSettings.open(.privacy(anchor: .privacyAllFiles)) }
+                    settingsURLButton(title: "Privacy & Security Home", subtitle: "Navigate to Privacy & Security homepage", symbolName: "lock.shield", tint: .gray) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.settings.PrivacySecurity.extension")) }
+                    settingsURLButton(title: "Advanced", subtitle: "Navigate to Privacy & Security > Advanced", symbolName: "gearshape.2", tint: .gray) { SystemSettings.open(.privacy(anchor: .advanced)) }
+                    settingsURLButton(title: "Security", subtitle: "Navigate to Privacy & Security > Security", symbolName: "shield", tint: .gray) { SystemSettings.open(.privacy(anchor: .security)) }
+                    settingsURLButton(title: "Security Improvements", subtitle: "Navigate to Privacy & Security > Security Improvements", symbolName: "shield.lefthalf.filled.badge.checkmark", tint: .green) { SystemSettings.open(.privacy(anchor: .securityImprovements)) }
+                    settingsURLButton(title: "FileVault", subtitle: "Navigate to Privacy & Security > FileVault", symbolName: "lock.rectangle", tint: .blue) { SystemSettings.open(.privacy(anchor: .fileVault)) }
+                    settingsURLButton(title: "Lockdown Mode", subtitle: "Navigate to Privacy & Security > Lockdown Mode", symbolName: "lock.trianglebadge.exclamationmark", tint: .red) { SystemSettings.open(.privacy(anchor: .lockdownMode)) }
+                    settingsURLButton(title: "Location Access Report", subtitle: "Navigate to Privacy & Security > Location Access Report", symbolName: "location.viewfinder", tint: .orange) { SystemSettings.open(.privacy(anchor: .locationAccessReport)) }
+                    settingsURLButton(title: "Advertising", subtitle: "Navigate to Privacy & Security > Advertising", symbolName: "megaphone", tint: .orange) { SystemSettings.open(.privacy(anchor: .privacyAdvertising)) }
+                    settingsURLButton(title: "Accessibility", subtitle: "Navigate to Privacy & Security > Accessibility", symbolName: "figure.wave", tint: .blue) { SystemSettings.open(.privacy(anchor: .privacyAccessibility)) }
+                    settingsURLButton(title: "Automation", subtitle: "Navigate to Privacy & Security > Automation", symbolName: "apple.terminal.on.rectangle", tint: .brown) { SystemSettings.open(.privacy(anchor: .privacyAutomation)) }
+                    settingsURLButton(title: "App Management", subtitle: "Navigate to Privacy & Security > App Management", symbolName: "shippingbox", tint: .brown) { SystemSettings.open(.privacy(anchor: .privacyAppBundles)) }
+                    settingsURLButton(title: "Analytics & Improvements", subtitle: "Navigate to Privacy & Security > Analytics & Improvements", symbolName: "chart.bar", tint: .cyan) { SystemSettings.open(.privacy(anchor: .privacyAnalytics)) }
+                    settingsURLButton(title: "Audio Capture", subtitle: "Navigate to Privacy & Security > Audio Capture", symbolName: "waveform", tint: .purple) { SystemSettings.open(.privacy(anchor: .privacyAudioCapture)) }
+                    settingsURLButton(title: "Bluetooth", subtitle: "Navigate to Privacy & Security > Bluetooth", symbolName: "bolt.horizontal.circle", tint: .blue) { SystemSettings.open(.privacy(anchor: .privacyBluetooth)) }
+                    settingsURLButton(title: "Calendar", subtitle: "Navigate to Privacy & Security > Calendar", symbolName: "calendar", tint: .red) { SystemSettings.open(.privacy(anchor: .privacyCalendars)) }
+                    settingsURLButton(title: "Camera", subtitle: "Navigate to Privacy & Security > Camera", symbolName: "camera", tint: .pink) { SystemSettings.open(.privacy(anchor: .privacyCamera)) }
+                    settingsURLButton(title: "Contacts", subtitle: "Navigate to Privacy & Security > Contacts", symbolName: "person.crop.circle.badge.checkmark", tint: .blue) { SystemSettings.open(.privacy(anchor: .privacyContacts)) }
+                    settingsURLButton(title: "Developer Tools", subtitle: "Navigate to Privacy & Security > Developer Tools", symbolName: "hammer", tint: .orange) { SystemSettings.open(.privacy(anchor: .privacyDevTools)) }
+                    settingsURLButton(title: "Files and Folders", subtitle: "Navigate to Privacy & Security > Files and Folders", symbolName: "folder", tint: .teal) { SystemSettings.open(.privacy(anchor: .privacyFilesAndFolders)) }
+                    settingsURLButton(title: "Focus", subtitle: "Navigate to Privacy & Security > Focus", symbolName: "moon.circle", tint: .indigo) { SystemSettings.open(.privacy(anchor: .privacyFocus)) }
+                    settingsURLButton(title: "HomeKit", subtitle: "Navigate to Privacy & Security > HomeKit", symbolName: "house", tint: .mint) { SystemSettings.open(.privacy(anchor: .privacyHomeKit)) }
+                    settingsURLButton(title: "Input Monitoring", subtitle: "Navigate to Privacy & Security > Input Monitoring", symbolName: "keyboard", tint: .mint) { SystemSettings.open(.privacy(anchor: .privacyListenEvent)) }
+                    settingsURLButton(title: "Location Services", subtitle: "Navigate to Privacy & Security > Location Services", symbolName: "location", tint: .orange) { SystemSettings.open(.privacy(anchor: .privacyLocationServices)) }
+                    settingsURLButton(title: "Media & Apple Music", subtitle: "Navigate to Privacy & Security > Media & Apple Music", symbolName: "music.note.list", tint: .red) { SystemSettings.open(.privacy(anchor: .privacyMedia)) }
+                    settingsURLButton(title: "Microphone", subtitle: "Navigate to Privacy & Security > Microphone", symbolName: "mic", tint: .red) { SystemSettings.open(.privacy(anchor: .privacyMicrophone)) }
+                    settingsURLButton(title: "Motion & Fitness", subtitle: "Navigate to Privacy & Security > Motion & Fitness", symbolName: "figure.walk", tint: .green) { SystemSettings.open(.privacy(anchor: .privacyMotion)) }
+                    settingsURLButton(title: "Sensitive Content Warning", subtitle: "Navigate to Privacy & Security > Sensitive Content Warning", symbolName: "exclamationmark.shield", tint: .pink) { SystemSettings.open(.privacy(anchor: .privacyNudityDetection)) }
+                    settingsURLButton(title: "Keychain & Passkeys", subtitle: "Navigate to Privacy & Security > Passkey Access", symbolName: "key", tint: .yellow) { SystemSettings.open(.privacy(anchor: .privacyPasskeyAccess)) }
+                    settingsURLButton(title: "Photos", subtitle: "Navigate to Privacy & Security > Photos", symbolName: "photo", tint: .purple) { SystemSettings.open(.privacy(anchor: .privacyPhotos)) }
+                    settingsURLButton(title: "Reminders", subtitle: "Navigate to Privacy & Security > Reminders", symbolName: "list.bullet", tint: .blue) { SystemSettings.open(.privacy(anchor: .privacyReminders)) }
+                    settingsURLButton(title: "Remote Desktop", subtitle: "Navigate to Privacy & Security > Remote Desktop", symbolName: "desktopcomputer.and.arrow.down", tint: .cyan) { SystemSettings.open(.privacy(anchor: .privacyRemoteDesktop)) }
+                    settingsURLButton(title: "Screen Recording", subtitle: "Navigate to Privacy & Security > Screen Recording", symbolName: "display", tint: .green) { SystemSettings.open(.privacy(anchor: .privacyScreenCapture)) }
+                    settingsURLButton(title: "Speech Recognition", subtitle: "Navigate to Privacy & Security > Speech Recognition", symbolName: "waveform.badge.mic", tint: .orange) { SystemSettings.open(.privacy(anchor: .privacySpeechRecognition)) }
+                    settingsURLButton(title: "System Services", subtitle: "Navigate to Privacy & Security > System Services", symbolName: "gearshape.2.fill", tint: .gray) { SystemSettings.open(.privacy(anchor: .privacySystemServices)) }
+                    settingsURLButton(title: "Full Disk Access", subtitle: "Navigate to Privacy & Security > Full Disk Access", symbolName: "externaldrive", tint: .indigo) { SystemSettings.open(.privacy(anchor: .privacyAllFiles)) }
                 }
             )
 
             settingsURLGroup(
-                title: "常用页面",
+                title: "Common Pages",
                 buttons: {
                     settingsURLButton(title: "Apple ID", symbolName: "person.crop.circle", tint: .blue) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.systempreferences.AppleIDSettings")) }
-                    settingsURLButton(title: "外观", symbolName: "circle.lefthalf.filled", tint: .gray) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Appearance-Settings.extension")) }
-                    settingsURLButton(title: "辅助功能", symbolName: "accessibility", tint: .blue) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Accessibility-Settings.extension")) }
-                    settingsURLButton(title: "蓝牙", symbolName: "bolt.horizontal.circle", tint: .blue) { SystemSettings.open(.bluetooth) }
-                    settingsURLButton(title: "电池", symbolName: "battery.100", tint: .green) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Battery-Settings.extension")) }
-                    settingsURLButton(title: "日期与时间", symbolName: "calendar", tint: .orange) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Date-Time-Settings.extension")) }
-                    settingsURLButton(title: "桌面与程序坞", symbolName: "menubar.dock.rectangle", tint: .teal) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Desktop-Settings.extension")) }
-                    settingsURLButton(title: "显示器", symbolName: "display.2", tint: .indigo) { SystemSettings.open(.displays) }
-                    settingsURLButton(title: "通用", symbolName: "gearshape", tint: .secondary) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.systempreferences.GeneralSettings")) }
-                    settingsURLButton(title: "登录项", symbolName: "person.badge.key", tint: .brown) { SystemSettings.open(.loginItems) }
-                    settingsURLButton(title: "网络", symbolName: "network", tint: .cyan) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Network-Settings.extension")) }
-                    settingsURLButton(title: "密码", symbolName: "key", tint: .yellow) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Passwords")) }
-                    settingsURLButton(title: "壁纸", symbolName: "photo.on.rectangle", tint: .purple) { SystemSettings.open(.wallpaper) }
-                    settingsURLButton(title: "屏幕保护程序", symbolName: "sparkles.tv", tint: .pink) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Wallpaper-Settings.extension", anchor: "ScreenSaver")) }
+                    settingsURLButton(title: "Appearance", symbolName: "circle.lefthalf.filled", tint: .gray) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Appearance-Settings.extension")) }
+                    settingsURLButton(title: "Accessibility", symbolName: "accessibility", tint: .blue) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Accessibility-Settings.extension")) }
+                    settingsURLButton(title: "Bluetooth", symbolName: "bolt.horizontal.circle", tint: .blue) { SystemSettings.open(.bluetooth) }
+                    settingsURLButton(title: "Battery", symbolName: "battery.100", tint: .green) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Battery-Settings.extension")) }
+                    settingsURLButton(title: "Date & Time", symbolName: "calendar", tint: .orange) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Date-Time-Settings.extension")) }
+                    settingsURLButton(title: "Desktop & Dock", symbolName: "menubar.dock.rectangle", tint: .teal) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Desktop-Settings.extension")) }
+                    settingsURLButton(title: "Displays", symbolName: "display.2", tint: .indigo) { SystemSettings.open(.displays) }
+                    settingsURLButton(title: "General", symbolName: "gearshape", tint: .secondary) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.systempreferences.GeneralSettings")) }
+                    settingsURLButton(title: "Login Items", symbolName: "person.badge.key", tint: .brown) { SystemSettings.open(.loginItems) }
+                    settingsURLButton(title: "Network", symbolName: "network", tint: .cyan) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Network-Settings.extension")) }
+                    settingsURLButton(title: "Passwords", symbolName: "key", tint: .yellow) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Passwords")) }
+                    settingsURLButton(title: "Wallpaper", symbolName: "photo.on.rectangle", tint: .purple) { SystemSettings.open(.wallpaper) }
+                    settingsURLButton(title: "Screen Saver", symbolName: "sparkles.tv", tint: .pink) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Wallpaper-Settings.extension", anchor: "ScreenSaver")) }
                 }
             )
 
             settingsURLGroup(
-                title: "显示器子页面",
+                title: "Display Sub-pages",
                 buttons: {
-                    settingsURLButton(title: "显示器列表", subtitle: "跳转到 显示器 > 显示器列表", symbolName: "rectangle.on.rectangle", tint: .indigo) { SystemSettings.open(.displays(anchor: .displaysSection)) }
-                    settingsURLButton(title: "排列", subtitle: "跳转到 显示器 > 排列", symbolName: "square.grid.3x3", tint: .blue) { SystemSettings.open(.displays(anchor: .arrangementSection)) }
-                    settingsURLButton(title: "分辨率", subtitle: "跳转到 显示器 > 分辨率", symbolName: "aspectratio", tint: .green) { SystemSettings.open(.displays(anchor: .resolutionSection)) }
-                    settingsURLButton(title: "夜览", subtitle: "跳转到 显示器 > 夜览", symbolName: "moon.stars", tint: .orange) { SystemSettings.open(.displays(anchor: .nightShiftSection)) }
-                    settingsURLButton(title: "色彩配置文件", subtitle: "跳转到 显示器 > 色彩配置文件", symbolName: "paintpalette", tint: .pink) { SystemSettings.open(.displays(anchor: .profileSection)) }
-                    settingsURLButton(title: "Sidecar", subtitle: "跳转到 显示器 > Sidecar", symbolName: "ipad.and.arrow.forward", tint: .mint) { SystemSettings.open(.displays(anchor: .sidecarSection)) }
-                    settingsURLButton(title: "高级", subtitle: "跳转到 显示器 > 高级", symbolName: "slider.horizontal.3", tint: .gray) { SystemSettings.open(.displays(anchor: .advancedSection)) }
-                    settingsURLButton(title: "氛围显示", subtitle: "跳转到 显示器 > 氛围显示", symbolName: "sparkles", tint: .purple) { SystemSettings.open(.displays(anchor: .ambienceSection)) }
-                    settingsURLButton(title: "显示特性", subtitle: "跳转到 显示器 > 显示特性", symbolName: "dial.medium", tint: .teal) { SystemSettings.open(.displays(anchor: .characteristicSection)) }
-                    settingsURLButton(title: "其他", subtitle: "跳转到 显示器 > 其他", symbolName: "ellipsis.circle", tint: .secondary) { SystemSettings.open(.displays(anchor: .miscellaneousSection)) }
+                    settingsURLButton(title: "Display List", subtitle: "Navigate to Displays > Display List", symbolName: "rectangle.on.rectangle", tint: .indigo) { SystemSettings.open(.displays(anchor: .displaysSection)) }
+                    settingsURLButton(title: "Arrangement", subtitle: "Navigate to Displays > Arrangement", symbolName: "square.grid.3x3", tint: .blue) { SystemSettings.open(.displays(anchor: .arrangementSection)) }
+                    settingsURLButton(title: "Resolution", subtitle: "Navigate to Displays > Resolution", symbolName: "aspectratio", tint: .green) { SystemSettings.open(.displays(anchor: .resolutionSection)) }
+                    settingsURLButton(title: "Night Shift", subtitle: "Navigate to Displays > Night Shift", symbolName: "moon.stars", tint: .orange) { SystemSettings.open(.displays(anchor: .nightShiftSection)) }
+                    settingsURLButton(title: "Color Profile", subtitle: "Navigate to Displays > Color Profile", symbolName: "paintpalette", tint: .pink) { SystemSettings.open(.displays(anchor: .profileSection)) }
+                    settingsURLButton(title: "Sidecar", subtitle: "Navigate to Displays > Sidecar", symbolName: "ipad.and.arrow.forward", tint: .mint) { SystemSettings.open(.displays(anchor: .sidecarSection)) }
+                    settingsURLButton(title: "Advanced", subtitle: "Navigate to Displays > Advanced", symbolName: "slider.horizontal.3", tint: .gray) { SystemSettings.open(.displays(anchor: .advancedSection)) }
+                    settingsURLButton(title: "Ambient Display", subtitle: "Navigate to Displays > Ambient Display", symbolName: "sparkles", tint: .purple) { SystemSettings.open(.displays(anchor: .ambienceSection)) }
+                    settingsURLButton(title: "Display Characteristics", subtitle: "Navigate to Displays > Display Characteristics", symbolName: "dial.medium", tint: .teal) { SystemSettings.open(.displays(anchor: .characteristicSection)) }
+                    settingsURLButton(title: "Miscellaneous", subtitle: "Navigate to Displays > Miscellaneous", symbolName: "ellipsis.circle", tint: .secondary) { SystemSettings.open(.displays(anchor: .miscellaneousSection)) }
                 }
             )
 
             settingsURLGroup(
-                title: "系统与高级页面",
+                title: "System & Advanced Pages",
                 buttons: {
-                    settingsURLButton(title: "隔空投送与接力", symbolName: "handoff", tint: .mint) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.AirDrop-Handoff-Settings.extension")) }
-                    settingsURLButton(title: "CD 与 DVD", symbolName: "opticaldiscdrive", tint: .orange) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.CD-DVD-Settings.extension")) }
-                    settingsURLButton(title: "保障范围", symbolName: "checkmark.shield", tint: .green) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Coverage-Settings.extension")) }
-                    settingsURLButton(title: "家人共享", symbolName: "person.3", tint: .pink) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Family-Settings.extension")) }
-                    settingsURLButton(title: "后续事项", symbolName: "list.bullet.clipboard", tint: .orange) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.FollowUpSettings.FollowUpSettingsExtension")) }
-                    settingsURLButton(title: "耳机", symbolName: "headphones", tint: .indigo) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.HeadphoneSettings")) }
-                    settingsURLButton(title: "语言与地区", symbolName: "globe", tint: .blue) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Localization-Settings.extension")) }
-                    settingsURLButton(title: "描述文件", symbolName: "doc.badge.gearshape", tint: .brown) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Profiles-Settings.extension")) }
-                    settingsURLButton(title: "共享", symbolName: "square.and.arrow.up.on.square", tint: .teal) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Sharing-Settings.extension")) }
-                    settingsURLButton(title: "软件更新", symbolName: "arrow.down.circle", tint: .green) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Software-Update-Settings.extension")) }
-                    settingsURLButton(title: "启动磁盘", symbolName: "internaldrive", tint: .gray) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Startup-Disk-Settings.extension")) }
-                    settingsURLButton(title: "储存空间", symbolName: "externaldrive.fill.badge.person.crop", tint: .indigo) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.settings.Storage")) }
-                    settingsURLButton(title: "时光机器", symbolName: "clock.arrow.trianglehead.counterclockwise.rotate.90", tint: .mint) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Time-Machine-Settings.extension")) }
+                    settingsURLButton(title: "AirDrop & Handoff", symbolName: "handoff", tint: .mint) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.AirDrop-Handoff-Settings.extension")) }
+                    settingsURLButton(title: "CDs & DVDs", symbolName: "opticaldiscdrive", tint: .orange) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.CD-DVD-Settings.extension")) }
+                    settingsURLButton(title: "Coverage", symbolName: "checkmark.shield", tint: .green) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Coverage-Settings.extension")) }
+                    settingsURLButton(title: "Family Sharing", symbolName: "person.3", tint: .pink) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Family-Settings.extension")) }
+                    settingsURLButton(title: "Follow Up", symbolName: "list.bullet.clipboard", tint: .orange) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.FollowUpSettings.FollowUpSettingsExtension")) }
+                    settingsURLButton(title: "Headphones", symbolName: "headphones", tint: .indigo) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.HeadphoneSettings")) }
+                    settingsURLButton(title: "Language & Region", symbolName: "globe", tint: .blue) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Localization-Settings.extension")) }
+                    settingsURLButton(title: "Profiles", symbolName: "doc.badge.gearshape", tint: .brown) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Profiles-Settings.extension")) }
+                    settingsURLButton(title: "Sharing", symbolName: "square.and.arrow.up.on.square", tint: .teal) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Sharing-Settings.extension")) }
+                    settingsURLButton(title: "Software Update", symbolName: "arrow.down.circle", tint: .green) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Software-Update-Settings.extension")) }
+                    settingsURLButton(title: "Startup Disk", symbolName: "internaldrive", tint: .gray) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Startup-Disk-Settings.extension")) }
+                    settingsURLButton(title: "Storage", symbolName: "externaldrive.fill.badge.person.crop", tint: .indigo) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.settings.Storage")) }
+                    settingsURLButton(title: "Time Machine", symbolName: "clock.arrow.trianglehead.counterclockwise.rotate.90", tint: .mint) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Time-Machine-Settings.extension")) }
                     settingsURLButton(title: "Touch ID", symbolName: "touchid", tint: .primary) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Touch-ID-Settings.extension")) }
-                    settingsURLButton(title: "传输或还原", symbolName: "arrow.triangle.2.circlepath", tint: .red) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Transfer-Reset-Settings.extension")) }
-                    settingsURLButton(title: "用户与群组", symbolName: "person.2", tint: .cyan) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Users-Groups-Settings.extension")) }
-                    settingsURLButton(title: "关于本机", symbolName: "info.circle", tint: .blue) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.SystemProfiler.AboutExtension")) }
+                    settingsURLButton(title: "Transfer or Reset", symbolName: "arrow.triangle.2.circlepath", tint: .red) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Transfer-Reset-Settings.extension")) }
+                    settingsURLButton(title: "Users & Groups", symbolName: "person.2", tint: .cyan) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.Users-Groups-Settings.extension")) }
+                    settingsURLButton(title: "About This Mac", symbolName: "info.circle", tint: .blue) { SystemSettings.open(SystemSettingsDestination(paneIdentifier: "com.apple.SystemProfiler.AboutExtension")) }
                 }
             )
 #endif
 
             platformSectionHeader(
-                title: "iOS 示例",
-                subtitle: "当前 `SystemSettingsKit` 在 iOS 侧只封装 UIKit 公开支持的设置入口。这里分别展示当前 App 设置页和通知设置页。"
+                title: "iOS Examples",
+                subtitle: "Currently `SystemSettingsKit` on iOS only wraps UIKit publicly supported settings entry points. Here we show the current App settings page and notification settings page."
             )
             settingsURLGroup(
-                title: "当前 App 设置页",
+                title: "Current App Settings Page",
                 buttons: {
 #if os(iOS)
-                    settingsURLButton(title: "便捷方法", subtitle: "iOS: `SystemSettings.openAppSettings()`", symbolName: "gearshape", tint: .blue) { SystemSettings.openAppSettings() }
-                    settingsURLButton(title: "当前 App 设置页", subtitle: "iOS: `SystemSettings.open(.appSettings)`", symbolName: "iphone.gen3", tint: .blue) { SystemSettings.open(.appSettings) }
-                    settingsURLButton(title: "直接打开 appSettings URL", subtitle: "iOS: `SystemSettings.open(url: SystemSettingsDestination.appSettings.url)`", symbolName: "gear", tint: .gray) { SystemSettings.open(url: SystemSettingsDestination.appSettings.url) }
+                    settingsURLButton(title: "Convenience Method", subtitle: "iOS: `SystemSettings.openAppSettings()`", symbolName: "gearshape", tint: .blue) { SystemSettings.openAppSettings() }
+                    settingsURLButton(title: "Current App Settings Page", subtitle: "iOS: `SystemSettings.open(.appSettings)`", symbolName: "iphone.gen3", tint: .blue) { SystemSettings.open(.appSettings) }
+                    settingsURLButton(title: "Direct Open appSettings URL", subtitle: "iOS: `SystemSettings.open(url: SystemSettingsDestination.appSettings.url)`", symbolName: "gear", tint: .gray) { SystemSettings.open(url: SystemSettingsDestination.appSettings.url) }
                     iosInfoCard(
                         title: "appSettings URL",
                         subtitle: SystemSettingsDestination.appSettings.url.absoluteString,
@@ -204,26 +204,26 @@ struct ContentView: View {
                         tint: .indigo
                     )
                     iosInfoCard(
-                        title: "平台边界",
-                        subtitle: "`SystemSettingsKit` 在 iOS 上只封装公开允许的设置入口；macOS 的 pane / anchor API 不会暴露到 iOS。",
+                        title: "Platform Boundaries",
+                        subtitle: "`SystemSettingsKit` on iOS only wraps publicly allowed settings entry points; macOS pane/anchor APIs are not exposed to iOS.",
                         symbolName: "exclamationmark.circle",
                         tint: .orange
                     )
 #else
                     unsupportedPlatformButton(
-                        title: "便捷方法",
+                        title: "Convenience Method",
                         subtitle: "iOS: `SystemSettings.openAppSettings()`",
                         symbolName: "gearshape",
                         tint: .blue
                     )
                     unsupportedPlatformButton(
-                        title: "当前 App 设置页",
-                        subtitle: "iOS: `SystemSettings.open(.appSettings)`，打开当前应用的系统设置页",
+                        title: "Current App Settings Page",
+                        subtitle: "iOS: `SystemSettings.open(.appSettings)`, opens the current app's system settings page",
                         symbolName: "iphone.gen3",
                         tint: .blue
                     )
                     unsupportedPlatformButton(
-                        title: "直接打开 appSettings URL",
+                        title: "Direct Open appSettings URL",
                         subtitle: "iOS: `SystemSettings.open(url: SystemSettingsDestination.appSettings.url)`",
                         symbolName: "gear",
                         tint: .gray
@@ -235,8 +235,8 @@ struct ContentView: View {
                         tint: .indigo
                     )
                     iosInfoCard(
-                        title: "平台边界",
-                        subtitle: "`SystemSettingsKit` 在 iOS 上只封装公开允许的设置入口；macOS 的 pane / anchor API 不会暴露到 iOS。",
+                        title: "Platform Boundaries",
+                        subtitle: "`SystemSettingsKit` on iOS only wraps publicly allowed settings entry points; macOS pane/anchor APIs are not exposed to iOS.",
                         symbolName: "exclamationmark.circle",
                         tint: .orange
                     )
@@ -244,12 +244,12 @@ struct ContentView: View {
                 }
             )
             settingsURLGroup(
-                title: "通知设置页",
+                title: "Notification Settings Page",
                 buttons: {
 #if os(iOS)
-                    settingsURLButton(title: "便捷方法", subtitle: "iOS: `SystemSettings.openNotificationSettings()`", symbolName: "bell.badge", tint: .orange) { SystemSettings.openNotificationSettings() }
-                    settingsURLButton(title: "通知设置页", subtitle: "iOS: `SystemSettings.open(.notificationSettings)`", symbolName: "bell.circle", tint: .orange) { SystemSettings.open(.notificationSettings) }
-                    settingsURLButton(title: "直接打开 notificationSettings URL", subtitle: "iOS: `SystemSettings.open(url: SystemSettingsDestination.notificationSettings.url)`", symbolName: "link.badge.plus", tint: .brown) { SystemSettings.open(url: SystemSettingsDestination.notificationSettings.url) }
+                    settingsURLButton(title: "Convenience Method", subtitle: "iOS: `SystemSettings.openNotificationSettings()`", symbolName: "bell.badge", tint: .orange) { SystemSettings.openNotificationSettings() }
+                    settingsURLButton(title: "Notification Settings Page", subtitle: "iOS: `SystemSettings.open(.notificationSettings)`", symbolName: "bell.circle", tint: .orange) { SystemSettings.open(.notificationSettings) }
+                    settingsURLButton(title: "Direct Open notificationSettings URL", subtitle: "iOS: `SystemSettings.open(url: SystemSettingsDestination.notificationSettings.url)`", symbolName: "link.badge.plus", tint: .brown) { SystemSettings.open(url: SystemSettingsDestination.notificationSettings.url) }
                     iosInfoCard(
                         title: "notificationSettings URL",
                         subtitle: SystemSettingsDestination.notificationSettings.url.absoluteString,
@@ -258,19 +258,19 @@ struct ContentView: View {
                     )
 #else
                     unsupportedPlatformButton(
-                        title: "便捷方法",
+                        title: "Convenience Method",
                         subtitle: "iOS: `SystemSettings.openNotificationSettings()`",
                         symbolName: "bell.badge",
                         tint: .orange
                     )
                     unsupportedPlatformButton(
-                        title: "通知设置页",
-                        subtitle: "iOS: `SystemSettings.open(.notificationSettings)`，打开当前应用通知设置页",
+                        title: "Notification Settings Page",
+                        subtitle: "iOS: `SystemSettings.open(.notificationSettings)`, opens the current app's notification settings page",
                         symbolName: "bell.circle",
                         tint: .orange
                     )
                     unsupportedPlatformButton(
-                        title: "直接打开 notificationSettings URL",
+                        title: "Direct Open notificationSettings URL",
                         subtitle: "iOS: `SystemSettings.open(url: SystemSettingsDestination.notificationSettings.url)`",
                         symbolName: "link.badge.plus",
                         tint: .brown
@@ -306,12 +306,12 @@ struct ContentView: View {
             spacing: 16,
         ) {
             PermissionCard(
-                title: "辅助功能",
-                subtitle: "辅助功能授权，用于窗口跟随和界面联动。",
+                title: "Accessibility",
+                subtitle: "Accessibility authorization for window tracking and interface interaction.",
                 symbolName: "figure.wave",
                 tint: .blue,
-                buttonTitle: "打开辅助功能",
-                helperText: "支持拖拽添加：\(Bundle.main.bundleURL.lastPathComponent)"
+                buttonTitle: "Open Accessibility",
+                helperText: "Supports drag-and-drop: \(Bundle.main.bundleURL.lastPathComponent)"
             ) { controller, sourceFrame in
                 controller.authorize(
                     pane: .accessibility,
@@ -320,12 +320,12 @@ struct ContentView: View {
                 )
             }
             PermissionCard(
-                title: "完全磁盘访问",
-                subtitle: "完全磁盘访问授权示例。",
+                title: "Full Disk Access",
+                subtitle: "Full disk access authorization example.",
                 symbolName: "externaldrive",
                 tint: .indigo,
-                buttonTitle: "打开完全磁盘访问",
-                helperText: "支持拖拽添加：\(Bundle.main.bundleURL.lastPathComponent)"
+                buttonTitle: "Open Full Disk Access",
+                helperText: "Supports drag-and-drop: \(Bundle.main.bundleURL.lastPathComponent)"
             ) { controller, sourceFrame in
                 controller.authorize(
                     pane: .fullDiskAccess,
@@ -334,12 +334,12 @@ struct ContentView: View {
                 )
             }
             PermissionCard(
-                title: "输入监控",
-                subtitle: "输入监控授权示例。",
+                title: "Input Monitoring",
+                subtitle: "Input monitoring authorization example.",
                 symbolName: "keyboard",
                 tint: .mint,
-                buttonTitle: "打开输入监控",
-                helperText: "支持拖拽添加：\(Bundle.main.bundleURL.lastPathComponent)"
+                buttonTitle: "Open Input Monitoring",
+                helperText: "Supports drag-and-drop: \(Bundle.main.bundleURL.lastPathComponent)"
             ) { controller, sourceFrame in
                 controller.authorize(
                     pane: .inputMonitoring,
@@ -348,12 +348,12 @@ struct ContentView: View {
                 )
             }
             PermissionCard(
-                title: "屏幕录制",
-                subtitle: "屏幕录制授权示例。",
+                title: "Screen Recording",
+                subtitle: "Screen recording authorization example.",
                 symbolName: "display",
                 tint: .green,
-                buttonTitle: "打开屏幕录制",
-                helperText: "支持拖拽添加：\(Bundle.main.bundleURL.lastPathComponent)"
+                buttonTitle: "Open Screen Recording",
+                helperText: "Supports drag-and-drop: \(Bundle.main.bundleURL.lastPathComponent)"
             ) { controller, sourceFrame in
                 controller.authorize(
                     pane: .screenRecording,
@@ -437,7 +437,7 @@ struct ContentView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("需要在 iOS 宿主应用中运行")
+                Text("Requires iOS host app to run")
                     .font(.system(size: 10.5, weight: .medium))
                     .foregroundStyle(.secondary)
             }
