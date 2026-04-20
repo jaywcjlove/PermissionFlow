@@ -27,6 +27,9 @@ final class SettingsWindowTracker {
     private var hasActiveTrackingTarget = false
     private var missingAppPollCount = 0
 
+    /// Starts locating the System Settings window and emitting frame updates.
+    /// It can optionally prompt for Accessibility access so AX-based tracking
+    /// becomes available after the initial window-server fallback.
     func startTracking(promptIfNeeded: Bool) {
         if promptIfNeeded {
             requestAccessibilityTrust()
@@ -43,6 +46,8 @@ final class SettingsWindowTracker {
         attachIfNeeded()
     }
 
+    /// Tears down polling and all AX observers so a future tracking session
+    /// begins from a clean state.
     func stopTracking() {
         pollTimer?.invalidate()
         pollTimer = nil
@@ -70,13 +75,20 @@ final class SettingsWindowTracker {
         missingAppPollCount = 0
     }
 
+    /// Triggers the macOS Accessibility permission prompt when requested by
+    /// the host app. Window-server tracking works without this, but AX access
+    /// gives more direct move/resize notifications and window attributes.
     private func requestAccessibilityTrust() {
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
     }
 
+    /// Central tracking loop entry point.
+    /// It resolves the running System Settings app, emits a best-effort frame
+    /// from the window server immediately, and if AX is available, attaches
+    /// observers to the active window for continued updates.
     private func attachIfNeeded() {
-        guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first else {
+        guard let app = runningSettingsApplication() else {
             finishTrackingIfNeededBecauseAppExited()
             return
         }
@@ -113,6 +125,9 @@ final class SettingsWindowTracker {
         updateCurrentFrame()
     }
 
+    /// Updates the current frame using Core Graphics window-server data.
+    /// This path does not need AX permission, so it acts as the initial or
+    /// fallback geometry source while System Settings is opening.
     private func updateFrameFromWindowServer(for pid: pid_t) {
         guard let frame = windowServerFrame(for: pid) else { return }
         guard currentFrame != frame else { return }
@@ -120,6 +135,8 @@ final class SettingsWindowTracker {
         onFrameChange?(frame)
     }
 
+    /// Rebinds the AX observer to the currently tracked System Settings
+    /// window so move and resize notifications keep the floating panel in sync.
     private func updateWindowObserver(for pid: pid_t, window: AXUIElement) {
         if let windowObserver {
             CFRunLoopRemoveSource(
@@ -141,6 +158,8 @@ final class SettingsWindowTracker {
         }
     }
 
+    /// Reads the active AX window's position and size attributes, converts
+    /// them into AppKit screen coordinates, and publishes the new frame.
     private func updateCurrentFrame() {
         guard let window = observedWindow else { return }
         guard
@@ -148,12 +167,15 @@ final class SettingsWindowTracker {
             let size = sizeValue(for: kAXSizeAttribute, element: window)
         else { return }
 
-        let frame = appKitScreenFrame(fromAccessibilityPosition: position, size: size)
+        let frame = appKitFrame(fromGlobalTopLeftFrame: CGRect(origin: position, size: size))
         guard currentFrame != frame else { return }
         currentFrame = frame
         onFrameChange?(frame)
     }
 
+    /// Chooses the best AX window to track for System Settings.
+    /// Main window is preferred, then focused window, then the first window
+    /// in the app's AX window list as a last fallback.
     private func mainWindow(for appElement: AXUIElement) -> AXUIElement? {
         if let window = elementValue(for: kAXMainWindowAttribute, element: appElement) {
             return window
@@ -164,6 +186,9 @@ final class SettingsWindowTracker {
         return arrayValue(for: kAXWindowsAttribute, element: appElement)?.first
     }
 
+    /// Creates an AX observer for the System Settings process.
+    /// All notifications funnel back into attachIfNeeded() so state refresh is
+    /// handled in one place on the main thread.
     private func makeObserver(for pid: pid_t) -> AXObserver? {
         var observer: AXObserver?
         let result = AXObserverCreate(pid, { _, _, _, refcon in
@@ -177,11 +202,15 @@ final class SettingsWindowTracker {
         return observer
     }
 
+    /// Registers a specific AX notification on an AX element using this
+    /// tracker instance as the observer callback context.
     private func addNotification(_ name: CFString, element: AXUIElement, observer: AXObserver) {
         let refcon = Unmanaged.passUnretained(self).toOpaque()
         _ = AXObserverAddNotification(observer, element, name, refcon)
     }
 
+    /// Reads an AX attribute expected to contain a single AXUIElement value.
+    /// Used for attributes like main window and focused window.
     private func elementValue(for key: String, element: AXUIElement) -> AXUIElement? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(element, key as CFString, &value)
@@ -189,6 +218,8 @@ final class SettingsWindowTracker {
         return (value as! AXUIElement)
     }
 
+    /// Reads an AX attribute expected to contain an array of AXUIElement values.
+    /// Used as a fallback when main/focused window attributes are unavailable.
     private func arrayValue(for key: String, element: AXUIElement) -> [AXUIElement]? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(element, key as CFString, &value)
@@ -196,6 +227,7 @@ final class SettingsWindowTracker {
         return value as? [AXUIElement]
     }
 
+    /// Reads an AX CGPoint attribute such as kAXPositionAttribute.
     private func pointValue(for key: String, element: AXUIElement) -> CGPoint? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(element, key as CFString, &value)
@@ -209,6 +241,7 @@ final class SettingsWindowTracker {
         return point
     }
 
+    /// Reads an AX CGSize attribute such as kAXSizeAttribute.
     private func sizeValue(for key: String, element: AXUIElement) -> CGSize? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(element, key as CFString, &value)
@@ -222,11 +255,23 @@ final class SettingsWindowTracker {
         return size
     }
 
+    /// Compares AX elements by Core Foundation equality to avoid rebuilding
+    /// observers when the tracked window object has not actually changed.
     private func isSameElement(_ lhs: AXUIElement?, _ rhs: AXUIElement?) -> Bool {
         guard let lhs, let rhs else { return false }
         return CFEqual(lhs, rhs)
     }
 
+    /// Chooses the most relevant running System Settings process to track.
+    /// This prefers a UI-capable instance over prohibited activation-policy
+    /// helpers when multiple matching processes exist.
+    private func runningSettingsApplication() -> NSRunningApplication? {
+        NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
+            .max(by: { ($0.activationPolicy == .prohibited ? 0 : 1) < ($1.activationPolicy == .prohibited ? 0 : 1) })
+    }
+
+    /// Scans on-screen window-server entries for the System Settings process
+    /// and returns the largest visible layer-0 window as the tracked frame.
     private func windowServerFrame(for pid: pid_t) -> CGRect? {
         guard
             let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
@@ -235,6 +280,22 @@ final class SettingsWindowTracker {
 
         // Choose the largest visible layer-0 window for the System Settings
         // process, which maps well to the main document-sized window.
+        //
+        // Important: kCGWindowBounds is the window server's bounds for the
+        // composited window surface. In practice this can still feel "larger"
+        // than the visually useful content area because macOS windows may have
+        // outer decoration/framing/shadow that is not where we want to attach
+        // the floating helper panel.
+        //
+        // If the panel appears slightly too far away from the bottom edge of
+        // System Settings, the gap usually does NOT come from the coordinate
+        // flip in appKitScreenFrame(fromWindowServerBounds:). It usually means
+        // the source bounds themselves are visually taller than the edge you
+        // want to align against.
+        //
+        // That is why a manual vertical compensation such as +28 can appear to
+        // "fix" the issue: it is effectively trimming some bottom framing from
+        // the tracked window frame before the panel snaps underneath it.
         let bestMatch = windows
             .filter { window in
                 guard let ownerPID = window[kCGWindowOwnerPID as String] as? pid_t else { return false }
@@ -246,47 +307,50 @@ final class SettingsWindowTracker {
             .compactMap { window -> CGRect? in
                 guard let bounds = window[kCGWindowBounds as String] as? NSDictionary else { return nil }
                 guard let cgBounds = CGRect(dictionaryRepresentation: bounds) else { return nil }
-                return appKitScreenFrame(fromWindowServerBounds: cgBounds)
+                let frame = appKitFrame(fromGlobalTopLeftFrame: cgBounds)
+                guard frame.width > 320, frame.height > 240 else { return nil }
+                return frame
             }
             .max(by: { $0.width * $0.height < $1.width * $1.height })
 
         return bestMatch
     }
 
-    private func appKitScreenFrame(fromWindowServerBounds bounds: CGRect) -> CGRect {
-        let desktopBounds = desktopFrameBounds()
-        guard desktopBounds.isNull == false else { return bounds }
-
-        return CGRect(
-            x: bounds.minX,
-            y: desktopBounds.maxY - bounds.maxY,
-            width: bounds.width,
-            height: bounds.height
-        )
-    }
-
-    private func appKitScreenFrame(fromAccessibilityPosition position: CGPoint, size: CGSize) -> CGRect {
-        let desktopBounds = desktopFrameBounds()
-        guard desktopBounds.isNull == false else {
-            return CGRect(origin: position, size: size)
-        }
-
-        return CGRect(
-            x: position.x,
-            y: desktopBounds.maxY - position.y - size.height,
-            width: size.width,
-            height: size.height
-        )
-    }
-
-    private func desktopFrameBounds() -> CGRect {
-        let desktopBounds = NSScreen.screens
-            .map(\.frame)
-            .reduce(CGRect.null) { partial, frame in
-                partial.union(frame)
+    /// Converts a global top-left-origin rectangle from CG/AX space into
+    /// AppKit screen coordinates by matching the rect to its containing screen.
+    /// The `+ 28` vertical offset is an intentional visual compensation used
+    /// by this package so the floating helper panel sits closer to the visible
+    /// bottom edge of the System Settings window.
+    private func appKitFrame(fromGlobalTopLeftFrame frame: CGRect) -> CGRect {
+        let screens = NSScreen.screens.compactMap { screen -> (frame: CGRect, cgBounds: CGRect)? in
+            guard
+                let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+            else {
+                return nil
             }
 
-        return desktopBounds
+            let displayID = CGDirectDisplayID(number.uint32Value)
+            return (frame: screen.frame, cgBounds: CGDisplayBounds(displayID))
+        }
+
+        let matchedScreen = screens
+            .filter { $0.cgBounds.intersects(frame) }
+            .max { lhs, rhs in
+                lhs.cgBounds.intersection(frame).width * lhs.cgBounds.intersection(frame).height
+                    < rhs.cgBounds.intersection(frame).width * rhs.cgBounds.intersection(frame).height
+            }
+
+        guard let matchedScreen else { return frame }
+
+        let localX = frame.minX - matchedScreen.cgBounds.minX
+        let localY = frame.minY - matchedScreen.cgBounds.minY
+
+        return CGRect(
+            x: matchedScreen.frame.minX + localX,
+            y: matchedScreen.frame.maxY - localY - frame.height - 3,
+            width: frame.width,
+            height: frame.height
+        )
     }
 
     /// Stops tracking only after repeated process misses so short-lived lookup

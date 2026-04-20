@@ -21,6 +21,9 @@ public final class PermissionFlowController: ObservableObject {
     /// Drives the visibility of the "reopen settings" action.
     @Published var isSettingsFrontmost = false
 
+    /// Drives the header icon animation while the app card is being dragged.
+    @Published var isDraggingApp = false
+
     public var onDrop: ((URL) -> Void)?
 
     private let configuration: PermissionFlowConfiguration
@@ -97,10 +100,8 @@ public final class PermissionFlowController: ObservableObject {
     /// Registers a unique `.app` bundle URL and notifies the host if needed.
     public func registerDroppedApp(_ url: URL) {
         guard url.pathExtension.lowercased() == "app" else { return }
-
         let normalizedURL = url.standardizedFileURL
         guard droppedApps.contains(normalizedURL) == false else { return }
-
         droppedApps.append(normalizedURL)
         onDrop?(normalizedURL)
     }
@@ -111,7 +112,6 @@ public final class PermissionFlowController: ObservableObject {
         if let first = droppedApps.first {
             return first
         }
-
         let bundleURL = Bundle.main.bundleURL.standardizedFileURL
         return bundleURL.pathExtension.lowercased() == "app" ? bundleURL : nil
     }
@@ -119,6 +119,7 @@ public final class PermissionFlowController: ObservableObject {
     /// The panel becomes mouse-transparent while dragging so System Settings
     /// underneath can receive the drop.
     func setPanelDragging(_ isDragging: Bool) {
+        isDraggingApp = isDragging
         panel?.setDraggingPassthrough(isDragging)
     }
 
@@ -149,7 +150,6 @@ public final class PermissionFlowController: ObservableObject {
                 self.presentPanel(self.panel, for: frame)
             }
         }
-
         tracker.onTrackingEnded = { [weak self] in
             Task { @MainActor [weak self] in
                 self?.closePanel()

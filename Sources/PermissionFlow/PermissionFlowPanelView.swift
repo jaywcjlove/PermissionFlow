@@ -33,6 +33,8 @@ struct PermissionFlowPanelView: View {
     /// Keeps the header logic isolated from the drag card layout.
     private var header: some View {
         HStack(alignment: .top, spacing: 3) {
+            HeaderDirectionIcon(isDragging: controller.isDraggingApp)
+
             Text("Sandbox Permission")
                 .font(.system(size: 17, weight: .semibold))
             Spacer()
@@ -58,6 +60,42 @@ struct PermissionFlowPanelView: View {
             }
             .buttonStyle(.borderless)
         }
+    }
+}
+
+@available(macOS 13.0, *)
+private struct HeaderDirectionIcon: View {
+    let isDragging: Bool
+
+    @State private var wigglePhase = false
+    @State private var scalePhase = false
+
+    var body: some View {
+        Image(systemName: "arrowshape.up.fill")
+            .font(.system(size: 14, weight: .bold))
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(.tint)
+            .rotationEffect(.degrees(isDragging ? 0 : (wigglePhase ? 12 : -12)))
+            .offset(y: isDragging ? 0 : (wigglePhase ? -2 : 1))
+            .scaleEffect(isDragging ? (scalePhase ? 1.18 : 0.88) : 1)
+            .animation(
+                isDragging
+                    ? .easeInOut(duration: 0.68).repeatForever(autoreverses: true)
+                    : .easeInOut(duration: 0.22).repeatForever(autoreverses: true),
+                value: isDragging ? scalePhase : wigglePhase
+            )
+            .onAppear {
+                wigglePhase = true
+            }
+            .onChange(of: isDragging) { dragging in
+                if dragging {
+                    scalePhase = true
+                    wigglePhase = false
+                } else {
+                    scalePhase = false
+                    wigglePhase = true
+                }
+            }
     }
 }
 #endif

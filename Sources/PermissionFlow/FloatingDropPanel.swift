@@ -38,7 +38,7 @@ final class FloatingDropPanel: NSPanel {
         sizingView = NSHostingView(rootView: panelView)
         super.init(
             contentRect: CGRect(origin: .zero, size: CGSize(width: initialPanelWidth, height: minimumPanelHeight)),
-            styleMask: [.titled, .nonactivatingPanel, .fullSizeContentView],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -49,14 +49,9 @@ final class FloatingDropPanel: NSPanel {
         backgroundColor = .clear
         hasShadow = true
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        titleVisibility = .hidden
-        titlebarAppearsTransparent = true
         isMovableByWindowBackground = false
         hidesOnDeactivate = false
         animationBehavior = .utilityWindow
-        standardWindowButton(.closeButton)?.isHidden = true
-        standardWindowButton(.miniaturizeButton)?.isHidden = true
-        standardWindowButton(.zoomButton)?.isHidden = true
 
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         contentView = hostingView
@@ -69,16 +64,22 @@ final class FloatingDropPanel: NSPanel {
 
     override var canBecomeMain: Bool { false }
 
+    /// If the system temporarily tries to key this panel, immediately ask the
+    /// controller to keep System Settings visually frontmost underneath it.
     override func becomeKey() {
         super.becomeKey()
         panelController?.keepSettingsVisible()
     }
 
+    /// Mirrors becomeKey() for main-window promotion attempts so the helper
+    /// remains non-disruptive to the actual System Settings interaction.
     override func becomeMain() {
         super.becomeMain()
         panelController?.keepSettingsVisible()
     }
 
+    /// Keeps System Settings visually present when the panel receives a mouse
+    /// down event, while still forwarding the event through normal handling.
     override func sendEvent(_ event: NSEvent) {
         if event.type == .leftMouseDown || event.type == .rightMouseDown {
             panelController?.keepSettingsVisible()
@@ -86,10 +87,13 @@ final class FloatingDropPanel: NSPanel {
         super.sendEvent(event)
     }
 
+    /// Shows the panel at its current frame without any positioning changes.
     func show() {
         orderFrontRegardless()
     }
 
+    /// Displays the panel at the source frame used to start the launch motion.
+    /// This is used before the target System Settings frame is known.
     func show(at sourceFrameInScreen: CGRect) {
         stopLaunchAnimation()
         isAnimatingLaunch = false
@@ -99,6 +103,8 @@ final class FloatingDropPanel: NSPanel {
         orderFrontRegardless()
     }
 
+    /// Animates the panel from the triggering UI element toward the current
+    /// System Settings window frame once the destination becomes available.
     func present(from sourceFrameInScreen: CGRect, to settingsFrame: CGRect) {
         stopLaunchAnimation()
         let targetFrame = targetFrame(for: settingsFrame)
@@ -129,6 +135,8 @@ final class FloatingDropPanel: NSPanel {
         launchTimer = timer
     }
 
+    /// Switches the panel into a drag-friendly mode where mouse events pass
+    /// through so System Settings can receive the drop destination interaction.
     func setDraggingPassthrough(_ isDragging: Bool) {
         ignoresMouseEvents = isDragging
         alphaValue = isDragging ? 0.72 : 1.0
@@ -139,6 +147,9 @@ final class FloatingDropPanel: NSPanel {
         }
     }
 
+    /// Repositions the panel under the latest tracked System Settings frame.
+    /// While the launch animation is still running, only the destination is
+    /// updated so the motion stays continuous.
     func snap(to settingsFrame: CGRect) {
         let target = targetFrame(for: settingsFrame)
         if isAnimatingLaunch {
@@ -153,16 +164,41 @@ final class FloatingDropPanel: NSPanel {
         orderFrontRegardless()
     }
 
+    /// Calculates the final panel frame relative to the System Settings window.
+    /// The panel aligns to the trailing content area, stays underneath the
+    /// window, and is clamped to the visible frame of the matching screen.
     private func targetFrame(for settingsFrame: CGRect) -> CGRect {
         let screenFrame = NSScreen.screens
             .first(where: { $0.frame.intersects(settingsFrame) })?
             .visibleFrame ?? settingsFrame
 
+        // The helper panel is anchored to the trailing content area of System
+        // Settings rather than the full window width because the leading
+        // sidebar is not the user's active target.
         let contentMinX = settingsFrame.minX + sidebarWidth
         let availableContentWidth = max(240, settingsFrame.width - sidebarWidth)
         let width = min(availableContentWidth, screenFrame.width - (screenInset * 2))
         let height = measuredPanelHeight(for: width)
 
+        // This is the place to tune visual attachment if the panel feels too
+        // far from the bottom edge of System Settings.
+        //
+        // Current behavior:
+        //   y = settingsFrame.minY - height
+        // means "place the panel immediately below the tracked window frame".
+        //
+        // If the tracked frame still includes some visual framing/shadow, the
+        // panel will look separated by that amount. A manual tweak such as:
+        //
+        //   y = settingsFrame.minY - height + 28
+        //
+        // is effectively saying "treat the bottom 28pt as non-visual spacing
+        // and pull the panel upward".
+        //
+        // This is usually a better place for that adjustment than
+        // SettingsWindowTracker.appKitScreenFrame(...), because the intent here
+        // is clearly visual alignment of the floating panel, not coordinate
+        // conversion of the tracked window.
         var origin = CGPoint(
             x: contentMinX,
             y: settingsFrame.minY - height
@@ -174,6 +210,8 @@ final class FloatingDropPanel: NSPanel {
         return CGRect(origin: origin, size: CGSize(width: width, height: height))
     }
 
+    /// Builds the starting frame for the launch animation around the source UI
+    /// element that initiated the permission flow.
     private func launchSourceFrame(for sourceFrameInScreen: CGRect) -> CGRect {
         let launchSize = CGSize(
             width: max(sourceFrameInScreen.width, frame.width * minimumLaunchScale),
@@ -188,12 +226,16 @@ final class FloatingDropPanel: NSPanel {
         )
     }
 
+    /// Measures the SwiftUI content at a specific width so the panel height can
+    /// fit its dynamic contents before being positioned or animated.
     private func measuredPanelHeight(for width: CGFloat) -> CGFloat {
         sizingView.setFrameSize(NSSize(width: width, height: sizingHeightLimit))
         sizingView.layoutSubtreeIfNeeded()
         return max(minimumPanelHeight, sizingView.fittingSize.height)
     }
 
+    /// Advances the current launch animation frame-by-frame until the panel
+    /// reaches its destination under the System Settings window.
     private func stepLaunchAnimation() {
         let elapsed = max(0, CACurrentMediaTime() - launchStartTime)
         if elapsed >= animationDuration {
@@ -209,17 +251,22 @@ final class FloatingDropPanel: NSPanel {
         setFrame(curvedFrame(from: launchFromFrame, to: launchToFrame, progress: progress), display: true)
     }
 
+    /// Stops and clears the timer that drives the launch animation.
     private func stopLaunchAnimation() {
         launchTimer?.invalidate()
         launchTimer = nil
     }
 
+    /// Produces a smooth eased progress value for the launch motion so the
+    /// panel accelerates and settles without a harsh linear stop.
     private func springProgress(at elapsed: TimeInterval) -> CGFloat {
         let omega = (2 * Double.pi) / animationResponse
         let progress = 1 - exp(-omega * elapsed) * (1 + (omega * elapsed))
         return min(max(progress, 0), 1)
     }
 
+    /// Interpolates the animated frame along a quadratic Bezier path between
+    /// the source and destination rectangles for a softer "fly in" effect.
     private func curvedFrame(from: CGRect, to: CGRect, progress: CGFloat) -> CGRect {
         // A quadratic Bezier curve gives the panel a softer "fly to target"
         // motion than a straight linear interpolation.
