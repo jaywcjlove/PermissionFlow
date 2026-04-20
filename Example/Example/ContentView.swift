@@ -456,6 +456,51 @@ struct ContentView: View {
                 )
             }
             PermissionCard(
+                title: "App Management",
+                subtitle: "App Management authorization example.",
+                symbolName: "shippingbox",
+                tint: .brown,
+                buttonTitle: "Open App Management",
+                helperText: "Supports drag-and-drop: \(Bundle.main.bundleURL.lastPathComponent)",
+                localeIdentifier: localizationTestLocale
+            ) { controller, sourceFrame in
+                controller.authorize(
+                    pane: .appManagement,
+                    suggestedAppURLs: [Bundle.main.bundleURL],
+                    sourceFrameInScreen: sourceFrame
+                )
+            }
+            PermissionCard(
+                title: "Developer Tools",
+                subtitle: "Developer Tools authorization example.",
+                symbolName: "hammer",
+                tint: .orange,
+                buttonTitle: "Open Developer Tools",
+                helperText: "Supports drag-and-drop: \(Bundle.main.bundleURL.lastPathComponent)",
+                localeIdentifier: localizationTestLocale
+            ) { controller, sourceFrame in
+                controller.authorize(
+                    pane: .developerTools,
+                    suggestedAppURLs: [Bundle.main.bundleURL],
+                    sourceFrameInScreen: sourceFrame
+                )
+            }
+            PermissionCard(
+                title: "Bluetooth",
+                subtitle: "Bluetooth authorization example.",
+                symbolName: "bolt.horizontal.circle",
+                tint: .blue,
+                buttonTitle: "Open Bluetooth",
+                helperText: "Supports drag-and-drop: \(Bundle.main.bundleURL.lastPathComponent)",
+                localeIdentifier: localizationTestLocale
+            ) { controller, sourceFrame in
+                controller.authorize(
+                    pane: .bluetooth,
+                    suggestedAppURLs: [Bundle.main.bundleURL],
+                    sourceFrameInScreen: sourceFrame
+                )
+            }
+            PermissionCard(
                 title: "Input Monitoring",
                 subtitle: "Input monitoring authorization example.",
                 symbolName: "keyboard",
@@ -466,6 +511,21 @@ struct ContentView: View {
             ) { controller, sourceFrame in
                 controller.authorize(
                     pane: .inputMonitoring,
+                    suggestedAppURLs: [Bundle.main.bundleURL],
+                    sourceFrameInScreen: sourceFrame
+                )
+            }
+            PermissionCard(
+                title: "Media & Apple Music",
+                subtitle: "Media & Apple Music authorization example.",
+                symbolName: "music.note.list",
+                tint: .red,
+                buttonTitle: "Open Media & Apple Music",
+                helperText: "Supports drag-and-drop: \(Bundle.main.bundleURL.lastPathComponent)",
+                localeIdentifier: localizationTestLocale
+            ) { controller, sourceFrame in
+                controller.authorize(
+                    pane: .mediaAppleMusic,
                     suggestedAppURLs: [Bundle.main.bundleURL],
                     sourceFrameInScreen: sourceFrame
                 )

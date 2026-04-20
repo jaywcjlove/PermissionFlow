@@ -105,11 +105,15 @@ dependencies: [
 
 ## 支持的权限页面
 
-`PermissionFlow` 只覆盖支持悬浮框 + 拖拽授权的这 4 个权限页：
+`PermissionFlow` 只覆盖支持悬浮框 + 拖拽授权的这 8 个权限页：
 
+- `App Management`：App 管理权限。系统会提供一个可添加应用的授权列表，适合使用悬浮拖拽辅助完成授权。
 - `Accessibility`：辅助功能权限。常用于窗口控制、界面自动化、辅助操作等场景，系统会维护一个可添加应用的授权列表。
+- `Bluetooth`：蓝牙权限。系统会提供可添加应用的授权列表，适合通过悬浮拖拽辅助完成授权。
+- `Developer Tools`：开发者工具权限。适用于需要被授予开发者工具控制权限的应用，系统同样提供可添加应用的授权列表。
 - `Full Disk Access`：完全磁盘访问权限。适用于需要读取系统级目录、其他应用数据或更广泛文件范围的工具类应用。
 - `Input Monitoring`：输入监控权限。用于监听键盘、鼠标等输入事件，常见于快捷键工具、输入增强工具或部分自动化应用。
+- `Media & Apple Music`：媒体与 Apple Music 权限。系统会提供可添加应用的授权列表，适合通过悬浮拖拽辅助完成授权。
 - `Screen Recording`：屏幕录制权限。用于截屏、录屏、屏幕内容识别或基于屏幕画面的辅助功能场景。
 
 其它所有 `System Settings` 页面或隐私子页面，请使用 `SystemSettingsKit`。
@@ -305,6 +309,15 @@ SystemSettings.open(.privacy(anchor: .security))
 ```
 
 原有的 `PermissionFlowPane` 仍然继续用于当前包内“带悬浮框授权流程”的那组隐私权限页面。
+
+- `.appManagement`：`隐私与安全性 > App Management`
+- `.accessibility`：`隐私与安全性 > Accessibility`
+- `.bluetooth`：`隐私与安全性 > Bluetooth`
+- `.developerTools`：`隐私与安全性 > Developer Tools`
+- `.fullDiskAccess`：`隐私与安全性 > Full Disk Access`
+- `.inputMonitoring`：`隐私与安全性 > Input Monitoring`
+- `.mediaAppleMusic`：`隐私与安全性 > Media & Apple Music`
+- `.screenRecording`：`隐私与安全性 > Screen Recording`
 
 当前内置的隐私与安全性强类型锚点，以及它们实际跳转到的位置：
 

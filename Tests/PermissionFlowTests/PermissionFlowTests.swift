@@ -7,7 +7,7 @@ import Testing
 func paneURLsUseSecuritySettingsDeepLink() {
     #expect(
         PermissionFlowPane.fullDiskAccess.settingsURL.absoluteString ==
-        "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles"
     )
 }
 
