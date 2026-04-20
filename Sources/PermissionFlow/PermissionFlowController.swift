@@ -135,6 +135,14 @@ public final class PermissionFlowController: ObservableObject {
         panel?.orderFrontRegardless()
     }
 
+    /// Closes the helper panel and returns focus to the host app.
+    func returnToHostApplication() {
+        closePanel()
+        _ = NSRunningApplication.current.activate(
+            options: [.activateAllWindows, .activateIgnoringOtherApps]
+        )
+    }
+
     /// Merges unique app bundle URLs into the current panel list.
     func mergeDroppedApps(with urls: [URL]) {
         for url in urls.uniqueAppURLs() {

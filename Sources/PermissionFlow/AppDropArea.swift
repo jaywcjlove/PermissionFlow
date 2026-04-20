@@ -62,7 +62,7 @@ final class AppDragSourceView: NSView, NSDraggingSource {
 
     override var intrinsicContentSize: NSSize {
         let fitting = hostingView.fittingSize
-        return NSSize(width: NSView.noIntrinsicMetric, height: max(88, fitting.height))
+        return NSSize(width: NSView.noIntrinsicMetric, height: max(43, fitting.height))
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -160,41 +160,45 @@ private final class AppBundlePasteboardWriter: NSObject, NSPasteboardWriting {
 
 @available(macOS 13.0, *)
 private struct AppDragCardContent: View {
+    @Environment(\.colorScheme) private var colorScheme
     let url: URL
 
     var body: some View {
         // The surrounding AppKit view owns the drag gesture. This SwiftUI view
         // only renders the card content.
-        HStack(spacing: 8) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
-                .resizable()
-                .frame(width: 40, height: 40)
-                .cornerRadius(10)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(url.deletingPathExtension().lastPathComponent)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.primary)
-                Text("Drag this app into the System Settings authorization list.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+        HStack(spacing: 11) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color.white.opacity(0.9))
+                Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
             }
+            .frame(width: 26, height: 26)
 
-            Spacer()
+            Text(url.deletingPathExtension().lastPathComponent)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color(nsColor: .labelColor).opacity(0.82))
+                .lineLimit(1)
 
-            VStack(spacing: 4) {
-                Image(systemName: "hand.draw")
-                    .font(.system(size: 16, weight: .semibold))
-                Text("Drag")
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
         }
-        .padding(8)
-        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.leading, 10)
+        .padding(.trailing, 12)
+        .frame(height: 43)
+        .background(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(colorScheme == .dark ? Color.white.opacity(0.06) : Color.white.opacity(0.65))
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(.white.opacity(0.20), style: StrokeStyle(lineWidth: 1, dash: [6, 6]))
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .stroke(
+                    colorScheme == .dark
+                        ? Color.white.opacity(0.08)
+                        : Color(red: 0.87451, green: 0.866667, blue: 0.862745),
+                    lineWidth: 1
+                )
         )
     }
 }

@@ -16,5 +16,19 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
     public var settingsURL: URL {
         URL(string: "x-apple.systempreferences:com.apple.preference.security?\(rawValue)")!
     }
+
+    /// Human-readable title used by the floating guidance panel.
+    public var title: String {
+        switch self {
+        case .accessibility:
+            return String(localized: "Accessibility", bundle: .module)
+        case .fullDiskAccess:
+            return String(localized: "Full Disk Access", bundle: .module)
+        case .inputMonitoring:
+            return String(localized: "Input Monitoring", bundle: .module)
+        case .screenRecording:
+            return String(localized: "Screen Recording", bundle: .module)
+        }
+    }
 }
 #endif

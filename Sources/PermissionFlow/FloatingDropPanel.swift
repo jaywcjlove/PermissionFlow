@@ -8,16 +8,12 @@ import SwiftUI
 final class FloatingDropPanel: NSPanel {
     private weak var panelController: PermissionFlowController?
     private let hostingView: NSHostingView<PermissionFlowPanelView>
-    private let sizingView: NSHostingView<PermissionFlowPanelView>
-    private let initialPanelWidth: CGFloat = 420
+    private let windowSize = NSSize(width: 530, height: 109)
 
-    /// System Settings has a leading sidebar. Matching the trailing content
-    /// area width keeps the floating panel visually aligned with the pane that
-    /// the user is actively interacting with.
-    private let sidebarWidth: CGFloat = 230
-    private let screenInset: CGFloat = 12
-    private let minimumPanelHeight: CGFloat = 96
-    private let sizingHeightLimit: CGFloat = 4096
+    private let sidebarWidth: CGFloat = 170
+    private let screenInset: CGFloat = 8
+    private let verticalInset: CGFloat = 14
+    private let horizontalOffset: CGFloat = -8
 
     /// Launch animation constants tuned to feel responsive without making the
     /// panel overshoot or jitter while the target window is still settling.
@@ -35,32 +31,25 @@ final class FloatingDropPanel: NSPanel {
         panelController = controller
         let panelView = PermissionFlowPanelView(controller: controller)
         hostingView = NSHostingView(rootView: panelView)
-        sizingView = NSHostingView(rootView: panelView)
         super.init(
-            contentRect: CGRect(origin: .zero, size: CGSize(width: initialPanelWidth, height: minimumPanelHeight)),
-            styleMask: [.titled, .nonactivatingPanel, .fullSizeContentView],
+            contentRect: CGRect(origin: .zero, size: windowSize),
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
 
-        level = .floating
+        level = .statusBar
         isReleasedWhenClosed = false
         isOpaque = false
         backgroundColor = .clear
         hasShadow = true
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        titleVisibility = .hidden
-        titlebarAppearsTransparent = true
-        isMovableByWindowBackground = false
+        collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
         hidesOnDeactivate = false
-        animationBehavior = .utilityWindow
-        standardWindowButton(.closeButton)?.isHidden = true
-        standardWindowButton(.miniaturizeButton)?.isHidden = true
-        standardWindowButton(.zoomButton)?.isHidden = true
+        animationBehavior = .none
 
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         contentView = hostingView
-        setContentSize(CGSize(width: initialPanelWidth, height: measuredPanelHeight(for: initialPanelWidth)))
+        setContentSize(windowSize)
     }
 
     /// The panel intentionally stays non-activating so System Settings remains
@@ -94,7 +83,6 @@ final class FloatingDropPanel: NSPanel {
         stopLaunchAnimation()
         isAnimatingLaunch = false
         alphaValue = 1
-        setContentSize(CGSize(width: frame.width, height: measuredPanelHeight(for: frame.width)))
         setFrame(launchSourceFrame(for: sourceFrameInScreen), display: false)
         orderFrontRegardless()
     }
@@ -154,24 +142,26 @@ final class FloatingDropPanel: NSPanel {
     }
 
     private func targetFrame(for settingsFrame: CGRect) -> CGRect {
-        let screenFrame = NSScreen.screens
+        let visibleFrame = NSScreen.screens
             .first(where: { $0.frame.intersects(settingsFrame) })?
             .visibleFrame ?? settingsFrame
 
         let contentMinX = settingsFrame.minX + sidebarWidth
-        let availableContentWidth = max(240, settingsFrame.width - sidebarWidth)
-        let width = min(availableContentWidth, screenFrame.width - (screenInset * 2))
-        let height = measuredPanelHeight(for: width)
+        let contentWidth = max(settingsFrame.width - sidebarWidth, windowSize.width)
+        let preferredX = contentMinX + ((contentWidth - windowSize.width) / 2) + horizontalOffset
+        let preferredY = settingsFrame.minY + verticalInset
 
-        var origin = CGPoint(
-            x: contentMinX,
-            y: settingsFrame.minY - height
+        let minX = visibleFrame.minX + screenInset
+        let maxX = visibleFrame.maxX - windowSize.width - screenInset
+        let minY = visibleFrame.minY + screenInset
+        let maxY = visibleFrame.maxY - windowSize.height - screenInset
+
+        return CGRect(
+            x: min(max(preferredX, minX), maxX),
+            y: min(max(preferredY, minY), maxY),
+            width: windowSize.width,
+            height: windowSize.height
         )
-
-        origin.x = max(screenFrame.minX + screenInset, min(origin.x, screenFrame.maxX - width - screenInset))
-        origin.y = max(screenFrame.minY + screenInset, min(origin.y, screenFrame.maxY - height - screenInset))
-
-        return CGRect(origin: origin, size: CGSize(width: width, height: height))
     }
 
     private func launchSourceFrame(for sourceFrameInScreen: CGRect) -> CGRect {
@@ -186,12 +176,6 @@ final class FloatingDropPanel: NSPanel {
             width: launchSize.width,
             height: launchSize.height
         )
-    }
-
-    private func measuredPanelHeight(for width: CGFloat) -> CGFloat {
-        sizingView.setFrameSize(NSSize(width: width, height: sizingHeightLimit))
-        sizingView.layoutSubtreeIfNeeded()
-        return max(minimumPanelHeight, sizingView.fittingSize.height)
     }
 
     private func stepLaunchAnimation() {
