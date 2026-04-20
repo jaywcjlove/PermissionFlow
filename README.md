@@ -105,16 +105,16 @@ Platform support:
 
 ## Supported Permission Panes
 
-`PermissionFlow` only covers the privacy panes that support the floating drag-to-authorize workflow:
+`PermissionFlow` only covers these 8 privacy panes that support the floating drag-and-drop authorization workflow:
 
-- `App Management`
-- `Accessibility`
-- `Bluetooth`
-- `Developer Tools`
-- `Full Disk Access`
-- `Input Monitoring`
-- `Media & Apple Music`
-- `Screen Recording`
+- `App Management`: The system presents an app list that supports adding apps directly, which makes it a good fit for the floating drag-to-authorize helper.
+- `Accessibility`: Commonly used for window control, UI automation, and assistive interaction workflows. macOS maintains an app list that users can add to directly.
+- `Bluetooth`: The system provides an app authorization list, so the floating drag workflow can guide users directly to the correct destination.
+- `Developer Tools`: Intended for apps that need Developer Tools control permission. The system also exposes an app list that supports direct addition.
+- `Full Disk Access`: Used by apps that need broader file access, including system-level directories or other apps' data.
+- `Input Monitoring`: Used for keyboard and mouse event monitoring, often needed by shortcut tools, input enhancement apps, and some automation tools.
+- `Media & Apple Music`: The system exposes an app list for this permission, which makes it suitable for the floating drag-to-authorize workflow.
+- `Screen Recording`: Used for screenshots, screen capture, screen analysis, or assistive workflows based on screen contents.
 
 For every other `System Settings` page or privacy subsection, use `SystemSettingsKit`.
 
