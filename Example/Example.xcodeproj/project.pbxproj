@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E00F20012F00000100B95F88 /* PermissionFlowExtendedStatus in Frameworks */ = {isa = PBXBuildFile; productRef = E00F20002F00000100B95F88 /* PermissionFlowExtendedStatus */; };
 		E01C97E12F91CE6900B95F88 /* PermissionFlow in Frameworks */ = {isa = PBXBuildFile; productRef = E01C97E02F91CE6900B95F88 /* PermissionFlow */; };
 		E01C992D2F959CBF00B95F88 /* PermissionFlow in Frameworks */ = {isa = PBXBuildFile; productRef = E01C992C2F959CBF00B95F88 /* PermissionFlow */; };
 		E01C992F2F959CBF00B95F88 /* SystemSettingsKit in Frameworks */ = {isa = PBXBuildFile; productRef = E01C992E2F959CBF00B95F88 /* SystemSettingsKit */; };
@@ -30,6 +31,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E00F20012F00000100B95F88 /* PermissionFlowExtendedStatus in Frameworks */,
 				E01C97E12F91CE6900B95F88 /* PermissionFlow in Frameworks */,
 				E01C992D2F959CBF00B95F88 /* PermissionFlow in Frameworks */,
 				E0D8D0F42F91CE6900B95F88 /* SystemSettingsKit in Frameworks */,
@@ -76,6 +78,7 @@
 			);
 			name = Example;
 			packageProductDependencies = (
+				E00F20002F00000100B95F88 /* PermissionFlowExtendedStatus */,
 				E01C97E02F91CE6900B95F88 /* PermissionFlow */,
 				E0D8D0F32F91CE6900B95F88 /* SystemSettingsKit */,
 				E01C992C2F959CBF00B95F88 /* PermissionFlow */,
@@ -394,6 +397,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E00F20002F00000100B95F88 /* PermissionFlowExtendedStatus */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PermissionFlowExtendedStatus;
+		};
 		E01C97E02F91CE6900B95F88 /* PermissionFlow */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = PermissionFlow;

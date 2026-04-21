@@ -81,10 +81,17 @@ dependencies: [
 ]
 ```
 
-This package now exposes two library products:
+The package URL and installation entry stay the same as before. What changed is the product layout: permission status detection for some panes is now split into optional extensions instead of being linked by default.
+
+This package now exposes these library products:
 
 - `PermissionFlow`: floating authorization guidance for supported privacy panes on macOS
 - `SystemSettingsKit`: reusable deeplink API for arbitrary System Settings pages
+- `PermissionFlowExtendedStatus`: one-stop optional status detection for `.bluetooth`, `.inputMonitoring`, `.mediaAppleMusic`, and `.screenRecording`
+- `PermissionFlowBluetoothStatus`: optional status detection for `.bluetooth`
+- `PermissionFlowMediaStatus`: optional status detection for `.mediaAppleMusic`
+- `PermissionFlowInputMonitoringStatus`: optional status detection for `.inputMonitoring`
+- `PermissionFlowScreenRecordingStatus`: optional status detection for `.screenRecording`
 
 Then add the product you need to your target:
 
@@ -97,6 +104,33 @@ Then add the product you need to your target:
     ]
 )
 ```
+
+If you want status detection for `.bluetooth`, `.inputMonitoring`, `.mediaAppleMusic`, and `.screenRecording`, add the optional extension product as well:
+
+```swift
+.target(
+    name: "YourApp",
+    dependencies: [
+        .product(name: "PermissionFlow", package: "PermissionFlow"),
+        .product(name: "PermissionFlowExtendedStatus", package: "PermissionFlow")
+    ]
+)
+```
+
+You can also depend on only the specific extension products you need:
+
+```swift
+.product(name: "PermissionFlowBluetoothStatus", package: "PermissionFlow")
+.product(name: "PermissionFlowMediaStatus", package: "PermissionFlow")
+.product(name: "PermissionFlowInputMonitoringStatus", package: "PermissionFlow")
+.product(name: "PermissionFlowScreenRecordingStatus", package: "PermissionFlow")
+```
+
+Why this split matters:
+
+- Apps that only use `PermissionFlow` keep the original core integration and do not need to link optional status-detection modules by default.
+- This reduces unnecessary compile-time and link-time dependencies such as `CoreBluetooth`, `MusicKit`, and `Carbon` when those permission states are not needed.
+- In practice, this usually keeps the final app product cleaner and can reduce the amount of optional code that ends up linked into your binary.
 
 Platform support:
 
@@ -121,7 +155,8 @@ Platform support:
 **Permission Status Display**: For supported permissions, `PermissionFlowButton` automatically displays the current authorization status:
 - ✅ **Granted**: Green checkmark icon with "Granted" text
 - ➡️ **Not Granted**: Blue arrow icon with "Grant" text  
-- Supported today: `.accessibility`, `.bluetooth`, `.fullDiskAccess`, `.inputMonitoring`, `.mediaAppleMusic`, `.screenRecording`
+- Built into `PermissionFlow`: `.accessibility`, `.fullDiskAccess`
+- Available through optional status extensions: `.bluetooth`, `.inputMonitoring`, `.mediaAppleMusic`, `.screenRecording`
 - 🔄 **Checking**: Clock icon with "Checking..." text
 - ❓ **Unknown**: Blue arrow icon with "Open" text (for unsupported detection)
 
@@ -142,6 +177,28 @@ struct ContentView: View {
             pane: .accessibility,
             suggestedAppURLs: [Bundle.main.bundleURL]
         )
+    }
+}
+```
+
+### Enable optional status detection
+
+To enable status detection for `.bluetooth`, `.inputMonitoring`, `.mediaAppleMusic`, and `.screenRecording`, add the optional extension products and register them once at app startup:
+
+```swift
+import PermissionFlowExtendedStatus
+import SwiftUI
+
+@main
+struct MyApp: App {
+    init() {
+        PermissionFlowExtendedStatus.register()
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
     }
 }
 ```

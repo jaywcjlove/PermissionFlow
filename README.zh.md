@@ -80,10 +80,17 @@ dependencies: [
 ]
 ```
 
-这个 package 现在提供两个 library product：
+package 地址和安装入口与之前保持一致。现在变化的是 product 的拆分方式：部分权限的状态检测不再默认一并链接，而是改成按需引入的可选扩展。
+
+这个 package 现在提供这些 library product：
 
 - `PermissionFlow`：用于支持悬浮授权引导的权限页
 - `SystemSettingsKit`：用于任意 `System Settings` 页面 deeplink 跳转
+- `PermissionFlowExtendedStatus`：为 `.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 提供一站式可选状态检测
+- `PermissionFlowBluetoothStatus`：`.bluetooth` 的可选状态检测
+- `PermissionFlowMediaStatus`：`.mediaAppleMusic` 的可选状态检测
+- `PermissionFlowInputMonitoringStatus`：`.inputMonitoring` 的可选状态检测
+- `PermissionFlowScreenRecordingStatus`：`.screenRecording` 的可选状态检测
 
 然后在 target 中按需引入产品：
 
@@ -96,6 +103,33 @@ dependencies: [
     ]
 )
 ```
+
+如果你希望 `.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 显示授权状态，还需要额外添加可选扩展 product：
+
+```swift
+.target(
+    name: "YourApp",
+    dependencies: [
+        .product(name: "PermissionFlow", package: "PermissionFlow"),
+        .product(name: "PermissionFlowExtendedStatus", package: "PermissionFlow")
+    ]
+)
+```
+
+如果你只需要其中某几个权限的状态检测，也可以只引入对应的扩展 product：
+
+```swift
+.product(name: "PermissionFlowBluetoothStatus", package: "PermissionFlow")
+.product(name: "PermissionFlowMediaStatus", package: "PermissionFlow")
+.product(name: "PermissionFlowInputMonitoringStatus", package: "PermissionFlow")
+.product(name: "PermissionFlowScreenRecordingStatus", package: "PermissionFlow")
+```
+
+这样拆分的意义：
+
+- 只使用 `PermissionFlow` 核心能力的应用，安装方式保持原样，不会默认链接这些可选状态检测模块。
+- 当你不需要这些权限状态时，可以减少 `CoreBluetooth`、`MusicKit`、`Carbon` 等额外编译期和链接期依赖。
+- 实际上这通常会让最终产物更干净，也更有利于避免把不需要的可选检测代码链接进二进制。
 
 平台支持：
 
@@ -121,6 +155,8 @@ dependencies: [
 
 - ✅ **已授权**：绿色勾选图标，显示"已授权"文字
 - ➡️ **未授权**：蓝色箭头图标，显示"授权"文字
+- `PermissionFlow` 内置支持：`.accessibility`、`.fullDiskAccess`
+- 可通过可选状态扩展启用：`.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording`
 - 🔄 **检查中**：时钟图标，显示"检查中..."文字
 - ❓ **未知**：蓝色箭头图标，显示"打开"文字（不支持检测时）
 
@@ -141,6 +177,28 @@ struct ContentView: View {
             pane: .accessibility,
             suggestedAppURLs: [Bundle.main.bundleURL]
         )
+    }
+}
+```
+
+### 启用可选状态检测
+
+如果你希望 `.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 也显示授权状态，需要添加对应的可选状态扩展产品，并在 app 启动时注册一次：
+
+```swift
+import PermissionFlowExtendedStatus
+import SwiftUI
+
+@main
+struct MyApp: App {
+    init() {
+        PermissionFlowExtendedStatus.register()
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
     }
 }
 ```

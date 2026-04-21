@@ -12,26 +12,40 @@ public protocol PermissionStatusProviding: Sendable {
 }
 
 @available(macOS 13.0, *)
+@MainActor
 public enum PermissionStatusRegistry {
+    private static let lock = NSLock()
+    private static var registeredProviders: [PermissionFlowPane: any PermissionStatusProviding] = [
+        .accessibility: AccessibilityPermissionStatusProvider(),
+        .fullDiskAccess: FullDiskAccessPermissionStatusProvider(),
+    ]
+
+    /// Registers or replaces a provider for a specific permission pane.
+    public static func register(
+        provider: any PermissionStatusProviding,
+        for pane: PermissionFlowPane
+    ) {
+        lock.lock()
+        defer { lock.unlock() }
+        registeredProviders[pane] = provider
+    }
+
+    /// Registers multiple providers in one call.
+    public static func register(
+        providers: [PermissionFlowPane: any PermissionStatusProviding]
+    ) {
+        lock.lock()
+        defer { lock.unlock() }
+        for (pane, provider) in providers {
+            registeredProviders[pane] = provider
+        }
+    }
+
     /// Returns the appropriate status provider for the given permission pane.
     public static func provider(for pane: PermissionFlowPane) -> any PermissionStatusProviding {
-        switch pane {
-        case .accessibility:
-            AccessibilityPermissionStatusProvider()
-        case .bluetooth:
-            BluetoothPermissionStatusProvider()
-        case .mediaAppleMusic:
-            MediaAppleMusicPermissionStatusProvider()
-        case .inputMonitoring:
-            InputMonitoringPermissionStatusProvider()
-        case .screenRecording:
-            ScreenRecordingPermissionStatusProvider()
-        case .fullDiskAccess:
-            FullDiskAccessPermissionStatusProvider()
-        case .appManagement,
-             .developerTools:
-            UnsupportedPermissionStatusProvider()
-        }
+        lock.lock()
+        defer { lock.unlock() }
+        return registeredProviders[pane] ?? UnsupportedPermissionStatusProvider()
     }
 }
 #endif

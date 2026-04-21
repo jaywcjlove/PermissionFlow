@@ -6,9 +6,18 @@
 //
 
 import SwiftUI
+#if os(macOS)
+import PermissionFlowExtendedStatus
+#endif
 
 @main
 struct ExampleApp: App {
+//    init() {
+//#if os(macOS)
+//        PermissionFlowExtendedStatus.register()
+//#endif
+//    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()

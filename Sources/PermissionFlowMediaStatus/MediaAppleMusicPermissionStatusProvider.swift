@@ -1,5 +1,6 @@
 #if os(macOS)
 import Foundation
+import PermissionFlow
 import StoreKit
 #if canImport(MusicKit)
 import MusicKit

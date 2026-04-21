@@ -1,6 +1,7 @@
 #if os(macOS)
 import CoreBluetooth
 import Foundation
+import PermissionFlow
 
 @available(macOS 13.0, *)
 public struct BluetoothPermissionStatusProvider: PermissionStatusProviding {
