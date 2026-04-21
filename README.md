@@ -77,7 +77,7 @@ Add the package to your app:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/your-org/PermissionFlow.git", from: "1.0.0")
+    .package(url: "https://github.com/jaywcjlove/PermissionFlow.git", from: "1.0.0")
 ]
 ```
 
@@ -157,6 +157,8 @@ struct ManualPermissionButton: View {
     @StateObject private var controller = PermissionFlow.makeController()
     @State private var authorizationState: PermissionAuthorizationState = .checking
 
+    let didBecomeActive = NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+
     var body: some View {
         Button {
             controller.authorize(
@@ -168,11 +170,12 @@ struct ManualPermissionButton: View {
             Label {
                 Text(title(for: authorizationState))
             } icon: {
-                Image(systemName: PermissionFlowButtonState.make(from: authorizationState).systemImage)
+                let icon = PermissionFlowButtonState.make(from: authorizationState).systemImage
+                Image(systemName: icon)
             }
         }
         .onAppear(perform: refreshStatus)
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+        .onReceive(didBecomeActive) { _ in
             refreshStatus()
         }
     }
