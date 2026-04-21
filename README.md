@@ -38,8 +38,6 @@
 
 [中文](./README.zh.md) • [Installation](#installation) • [Public API](#public-api) • [System Settings URL Scheme](#system-settings-url-scheme)
 
-`PermissionFlow` is a macOS permission-guidance library that opens the target `System Settings` privacy pane and, for supported drag-based authorization pages, shows a floating panel that follows the System Settings window and lets users drag the current `.app` into the permission list. It also includes `SystemSettingsKit` for strongly typed deeplinks into `System Settings` pages and subsections.
-
 <hr>
 
 PermissionFlow
@@ -47,7 +45,7 @@ PermissionFlow
 
 <img alt="PermissionFlow" src="https://github.com/user-attachments/assets/906a643d-07e5-4889-85f4-858f2b03de07" />
 
-`PermissionFlow` is a Swift Package for Apple platform apps that bundles two focused libraries:
+`PermissionFlow` is a macOS permission-guidance library that opens the target `System Settings` privacy pane and, for supported drag-based authorization pages, shows a floating panel that follows the System Settings window and lets users drag the current `.app` into the permission list. It also includes `SystemSettingsKit` for strongly typed deeplinks into `System Settings` pages and subsections.
 
 - `PermissionFlow`: macOS-only floating guidance for drag-based privacy authorization
 - `SystemSettingsKit`: typed Settings deeplinks for macOS, with partial iOS support

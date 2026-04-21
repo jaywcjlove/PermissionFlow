@@ -38,8 +38,6 @@
 
 [English](./README.md) • [安装](#安装) • [对外 API](#对外-api) • [System Settings URL Scheme](#system-settings-url-scheme)
 
-`PermissionFlow` 是一个面向 macOS 的权限引导库：它会打开目标 `System Settings` 隐私权限页，并在支持拖拽授权的页面上显示一个跟随系统设置窗口的悬浮面板，让用户可以直接把当前 `.app` 拖入权限列表。项目同时内置 `SystemSettingsKit`，用于以强类型方式 deeplink 到 `System Settings` 的页面和子页面。
-
 <hr>
 
 PermissionFlow
@@ -47,13 +45,12 @@ PermissionFlow
 
 <img alt="PermissionFlow" src="https://github.com/user-attachments/assets/906a643d-07e5-4889-85f4-858f2b03de07" />
 
-`PermissionFlow` 是一个面向 Apple 平台应用的 Swift Package，包含两个职责明确的子库：
+`PermissionFlow` 是一个面向 macOS 的权限引导库：它会打开目标 `System Settings` 隐私权限页，并在支持拖拽授权的页面上显示一个跟随系统设置窗口的悬浮面板，让用户可以直接把当前 `.app` 拖入权限列表。项目同时内置 `SystemSettingsKit`，用于以强类型方式 deeplink 到 `System Settings` 的页面和子页面。
 
 - `PermissionFlow`：仅支持 macOS 的悬浮授权引导库
 - `SystemSettingsKit`：用于跳转系统设置页面的强类型 API，支持 macOS，并提供部分 iOS 支持
 
 它会自动打开对应的系统隐私页；对于支持拖拽式授权的权限页，还会显示一个悬浮辅助窗口，跟随 `System Settings` 窗口移动，并允许用户直接把当前 `.app` 拖入授权列表。
-
 
 ## 功能特性
 
