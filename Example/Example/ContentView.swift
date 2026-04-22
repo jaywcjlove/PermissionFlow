@@ -28,7 +28,7 @@ struct ContentView: View {
                 .padding(.bottom, 24)
                 .environment(\.locale, .init(identifier: localizationTestLocale))
             }
-            .frame(minWidth: 820, minHeight: 420)
+            .frame(minWidth: 420, minHeight: 320)
             .navigationTitle("PermissionFlow Demo")
         }
 #else
@@ -98,7 +98,7 @@ struct ContentView: View {
             Text("Then open any PermissionFlow card below. The floating window will use the selected locale for its localized strings.")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
-            HStack {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), alignment: .leading)], spacing: 5) {
                 PermissionFlowButton(title: "Accessibility", pane: .accessibility)
                 PermissionFlowButton(title: "App Management", pane: .appManagement)
                 PermissionFlowButton(title: "Bluetooth", pane: .bluetooth)
@@ -108,7 +108,7 @@ struct ContentView: View {
                 PermissionFlowButton(title: "Media AppleMusic", pane: .mediaAppleMusic)
                 PermissionFlowButton(title: "Screen Recording", pane: .screenRecording)
             }
-            HStack {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), alignment: .leading)], spacing: 5) {
                 PermissionFlowButton(pane: .accessibility)
                 PermissionFlowButton(pane: .appManagement)
                 PermissionFlowButton(pane: .bluetooth)

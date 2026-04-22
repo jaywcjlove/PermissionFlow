@@ -43,7 +43,7 @@
 PermissionFlow
 ===
 
-<img alt="PermissionFlow" src="https://github.com/user-attachments/assets/3698b0bf-71e1-4c32-8368-856c7c1a2bc7" />
+<img alt="PermissionFlow" src="https://github.com/user-attachments/assets/9af78ef4-be7b-48b2-8651-3b8c42e0a9c8" />
 
 `PermissionFlow` is a macOS permission-guidance library that opens the target `System Settings` privacy pane and, for supported drag-based authorization pages, shows a floating panel that follows the System Settings window and lets users drag the current `.app` into the permission list. It also includes `SystemSettingsKit` for strongly typed deeplinks into `System Settings` pages and subsections.
 

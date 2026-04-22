@@ -43,7 +43,7 @@
 PermissionFlow
 ===
 
-<img alt="PermissionFlow" src="https://github.com/user-attachments/assets/3698b0bf-71e1-4c32-8368-856c7c1a2bc7" />
+<img alt="PermissionFlow" src="https://github.com/user-attachments/assets/9af78ef4-be7b-48b2-8651-3b8c42e0a9c8" />
 
 `PermissionFlow` 是一个面向 macOS 的权限引导库：它会打开目标 `System Settings` 隐私权限页，并在支持拖拽授权的页面上显示一个跟随系统设置窗口的悬浮面板，让用户可以直接把当前 `.app` 拖入权限列表。项目同时内置 `SystemSettingsKit`，用于以强类型方式 deeplink 到 `System Settings` 的页面和子页面。
 
