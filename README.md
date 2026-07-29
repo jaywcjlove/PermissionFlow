@@ -38,7 +38,7 @@
 </div>
 <hr>
 
-[中文](./README.zh.md) • [Installation](#installation) • [Public API](#public-api) • [System Settings URL Scheme](#system-settings-url-scheme)
+[中文](./README.zh.md) • [Installation](#installation) • [Localization](#localization) • [Public API](#public-api) • [System Settings URL Scheme](#system-settings-url-scheme)
 
 <hr>
 
@@ -481,6 +481,56 @@ final class PermissionViewModel: ObservableObject {
 }
 ```
 
+### Localization
+
+PermissionFlow UI copy (button titles, floating panel title, drag card label) is loaded through a resilient package resource lookup. It does **not** call SwiftPM’s `Bundle.module` at runtime, so missing or relocated resource bundles in signed/installed apps degrade to English defaults instead of asserting.
+
+#### SwiftUI environment locale (recommended)
+
+`PermissionFlowButton` reads `@Environment(\.locale)` for its default title and passes the same identifier into the floating panel when the button is pressed:
+
+```swift
+import PermissionFlow
+import SwiftUI
+
+struct ContentView: View {
+    @State private var languageCode = "zh-Hans"
+
+    var body: some View {
+        VStack {
+            PermissionFlowButton(pane: .accessibility)
+            PermissionFlowButton(pane: .fullDiskAccess)
+        }
+        .environment(\.locale, .init(identifier: languageCode))
+    }
+}
+```
+
+Prefer full identifiers such as `zh-Hans`, `zh-Hant`, or `ja`. Short codes like `zh` may only partially match available `.lproj` folders.
+
+#### Manual controller / configuration
+
+Floating panels created outside `PermissionFlowButton` do **not** inherit the SwiftUI environment automatically. Set the locale explicitly:
+
+```swift
+// At controller creation
+let controller = PermissionFlow.makeController(
+    configuration: .init(
+        requiredAppURLs: [Bundle.main.bundleURL],
+        localeIdentifier: "ja"
+    )
+)
+
+// Or later
+controller.setLocaleIdentifier("ja")
+```
+
+#### Built-in languages
+
+Package strings ship under `Sources/PermissionFlow/Resources/*.lproj` for:
+
+`en`, `zh-Hans`, `zh-Hant`, `ja`, `ko`, `fr`, `de`, `es`, `pt`, `ru`, `ar`
+
 ### Keep the launch animation
 
 If you use `PermissionFlowButton`, the package captures the click position for you and the floating panel will animate from the button click to the `System Settings` window automatically.
@@ -532,14 +582,14 @@ PermissionFlowButton(
     suggestedAppURLs: [Bundle.main.bundleURL],
     configuration: .init()
 ) { state in
-    let str = LocalizedStringResource(
-        String.LocalizationValue(state.titleKey),
-        bundle: PermissionFlowResources.bundle
-    )
-    Label(str, systemImage: state.systemImage)
+    // Prefer `defaultTitle` (or your own copy) so custom labels do not
+    // depend on `Bundle.module` / a missing package resource bundle.
+    Label(state.defaultTitle, systemImage: state.systemImage)
         .foregroundStyle(state.isGranted ? .green : .primary)
 }
 ```
+
+Default titles follow the SwiftUI environment locale when you omit a custom `title` / `label`. See [Localization](#localization).
 
 ### `PermissionFlow.makeController`
 
@@ -549,7 +599,8 @@ Creates a reusable controller:
 let controller = PermissionFlow.makeController(
     configuration: .init(
         requiredAppURLs: [Bundle.main.bundleURL],
-        promptForAccessibilityTrust: false
+        promptForAccessibilityTrust: false,
+        localeIdentifier: "zh-Hans"
     )
 )
 ```
@@ -559,6 +610,7 @@ let controller = PermissionFlow.makeController(
 Main entry points:
 
 - `authorize(pane:suggestedAppURLs:sourceFrameInScreen:)`
+- `setLocaleIdentifier(_:)` — updates floating-panel localization
 - `showPanel()`
 - `closePanel()`
 - `resetDroppedApps()`
@@ -566,19 +618,40 @@ Main entry points:
 
 ### `PermissionFlowResources`
 
-Expose internal bundled resources externally via `Bundle.module`.
-For host apps to access localized strings or other assets bundled within PermissionFlow.
+Safe access to the package resource bundle for host apps that need PermissionFlow’s localized strings or other packaged assets.
+
+Do **not** use SwiftPM’s `Bundle.module` from host UI or runtime code: when the installed `.app` layout does not match compile-time assumptions, `Bundle.module` can trap (`EXC_BREAKPOINT` / assertion failure). `PermissionFlowResources` searches common packaged locations and never asserts.
 
 ```swift
 import PermissionFlow
 
+// Preferred: optional package bundle + English (or your) default
+if let bundle = PermissionFlowResources.packageBundle {
+    let title = bundle.localizedString(
+        forKey: "permission_flow.button.grant",
+        value: "Grant",
+        table: nil
+    )
+}
+
+// Non-optional convenience: package bundle, or Bundle.main if lookup fails
 let bundle = PermissionFlowResources.bundle
 let title = bundle.localizedString(
-    forKey: "some.key",
-    value: "default text",
+    forKey: "permission_flow.button.grant",
+    value: "Grant",
     table: nil
 )
 ```
+
+```swift
+public enum PermissionFlowResources {
+    public static let resourceBundleName = "PermissionFlow_PermissionFlow"
+    public static var packageBundle: Bundle? { get } // nil when not found
+    public static var bundle: Bundle { get }         // packageBundle ?? .main
+}
+```
+
+Package UI (`PermissionFlowButton`, floating panel, drag card) already uses this resilient path internally.
 
 ### `SystemSettings.open`
 
@@ -848,7 +921,8 @@ Available common accessibility anchors:
 ```swift
 let configuration = PermissionFlowConfiguration(
     requiredAppURLs: [Bundle.main.bundleURL],
-    promptForAccessibilityTrust: false
+    promptForAccessibilityTrust: false,
+    localeIdentifier: "zh-Hans"
 )
 ```
 
@@ -856,6 +930,7 @@ let configuration = PermissionFlowConfiguration(
 
 - `requiredAppURLs` preloads apps into the panel
 - `promptForAccessibilityTrust` controls whether AX trust is actively prompted
+- `localeIdentifier` seeds floating-panel localization when you use the controller without `PermissionFlowButton` / `.environment(\.locale, …)`
 
 ## How It Works
 
@@ -863,7 +938,7 @@ let configuration = PermissionFlowConfiguration(
 2. `PermissionFlow` opens the matching `System Settings` page.
 3. If that pane supports drag-based authorization, a floating panel appears.
 4. The panel animates from the click location to the `System Settings` window.
-5. The panel tracks the `System Settings` window position.
+5. The panel tracks the `System Settings` window position (AX attributes are type-checked with `CFGetTypeID` / `AXValueGetTypeID` before conversion; unexpected types skip the frame instead of crashing).
 6. The user drags the current `.app` bundle into the permission list.
 
 ## Example
@@ -875,8 +950,9 @@ The repository includes an `Example` macOS app that demonstrates all supported p
 - The floating helper is only shown for panes that support app-list style authorization.
 - **Permission status detection**: Uses official Apple APIs (`CGPreflightListenEventAccess`, `CGPreflightScreenCaptureAccess`, `AXIsProcessTrusted`) for accurate status checking without triggering system prompts.
 - **Status refresh**: Permission status is automatically refreshed when the app becomes active and when buttons appear on screen.
+- **Localization**: Prefer `.environment(\.locale, …)` with `PermissionFlowButton`, or `localeIdentifier` / `setLocaleIdentifier(_:)` with a manual controller. Host code should use `PermissionFlowResources.packageBundle` (or `bundle`) and always pass a default string value—never `Bundle.module`—to avoid crashes in packaged apps.
 - `System Settings` behavior is controlled by macOS and may vary slightly by OS version.
-- AX-based window tracking is used when available. Window Server frame lookup is used as fallback and bootstrap.
+- AX-based window tracking is used when available. Window Server frame lookup is used as fallback and bootstrap. AX read results are validated before conversion so unexpected attribute types return `nil` / skip the current frame.
 - The package does not bypass macOS security. It only guides the user through the system UI.
 
 ## License

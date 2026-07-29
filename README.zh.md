@@ -38,7 +38,7 @@
 </div>
 <hr>
 
-[English](./README.md) • [安装](#安装) • [对外 API](#对外-api) • [System Settings URL Scheme](#system-settings-url-scheme)
+[English](./README.md) • [安装](#安装) • [本地化](#本地化) • [对外 API](#对外-api) • [System Settings URL Scheme](#system-settings-url-scheme)
 
 <hr>
 
@@ -477,6 +477,56 @@ final class PermissionViewModel: ObservableObject {
 }
 ```
 
+### 本地化
+
+PermissionFlow 的 UI 文案（按钮标题、悬浮面板标题、拖拽卡片标签）通过可容错的包资源查找加载。运行时**不会**调用 SwiftPM 生成的 `Bundle.module`；在已签名/已安装 `.app` 中若资源路径异常，会回退到英文默认文案，而不是触发断言崩溃。
+
+#### SwiftUI environment locale（推荐）
+
+`PermissionFlowButton` 通过 `@Environment(\.locale)` 解析默认按钮标题，并在点击时把同一 locale 传给悬浮面板：
+
+```swift
+import PermissionFlow
+import SwiftUI
+
+struct ContentView: View {
+    @State private var languageCode = "zh-Hans"
+
+    var body: some View {
+        VStack {
+            PermissionFlowButton(pane: .accessibility)
+            PermissionFlowButton(pane: .fullDiskAccess)
+        }
+        .environment(\.locale, .init(identifier: languageCode))
+    }
+}
+```
+
+建议使用完整标识符，例如 `zh-Hans`、`zh-Hant`、`ja`。仅写 `zh` 时，可能只能部分匹配现有的 `.lproj`。
+
+#### 手动 Controller / 配置
+
+不经过 `PermissionFlowButton` 创建的悬浮面板**不会**自动继承 SwiftUI environment，需要显式设置 locale：
+
+```swift
+// 创建 controller 时
+let controller = PermissionFlow.makeController(
+    configuration: .init(
+        requiredAppURLs: [Bundle.main.bundleURL],
+        localeIdentifier: "ja"
+    )
+)
+
+// 或之后再改
+controller.setLocaleIdentifier("ja")
+```
+
+#### 内置语言
+
+包内字符串位于 `Sources/PermissionFlow/Resources/*.lproj`，当前包含：
+
+`en`、`zh-Hans`、`zh-Hant`、`ja`、`ko`、`fr`、`de`、`es`、`pt`、`ru`、`ar`
+
 ### 保留点击到设置窗口的飞入动画
 
 如果你使用 `PermissionFlowButton`，包内部会自动记录点击位置，悬浮框会从点击点飞到 `System Settings` 窗口附近。
@@ -527,14 +577,14 @@ PermissionFlowButton(
     suggestedAppURLs: [Bundle.main.bundleURL],
     configuration: .init()
 ) { state in
-    let str = LocalizedStringResource(
-        String.LocalizationValue(state.titleKey),
-        bundle: PermissionFlowResources.bundle
-    )
-    Label(str, systemImage: state.systemImage)
+    // 自定义 label 时优先用 defaultTitle（或你自己的文案），
+    // 避免依赖 Bundle.module / 缺失的包资源 bundle。
+    Label(state.defaultTitle, systemImage: state.systemImage)
         .foregroundStyle(state.isGranted ? .green : .primary)
 }
 ```
+
+省略自定义 `title` / `label` 时，默认标题会跟随 SwiftUI environment locale。详见 [本地化](#本地化)。
 
 ### `PermissionFlow.makeController`
 
@@ -544,7 +594,8 @@ PermissionFlowButton(
 let controller = PermissionFlow.makeController(
     configuration: .init(
         requiredAppURLs: [Bundle.main.bundleURL],
-        promptForAccessibilityTrust: false
+        promptForAccessibilityTrust: false,
+        localeIdentifier: "zh-Hans"
     )
 )
 ```
@@ -554,6 +605,7 @@ let controller = PermissionFlow.makeController(
 主要入口：
 
 - `authorize(pane:suggestedAppURLs:sourceFrameInScreen:)`
+- `setLocaleIdentifier(_:)` — 更新悬浮面板本地化
 - `showPanel()`
 - `closePanel()`
 - `resetDroppedApps()`
@@ -561,24 +613,40 @@ let controller = PermissionFlow.makeController(
 
 ### `PermissionFlowResources`
 
-对外暴露包内资源 bundle（`Bundle.module`）。宿主 App 需要读取 PermissionFlow 自带的本地化字符串或其他资源时使用：
+为宿主 App 安全访问包内资源 bundle（本地化字符串等资源）。
+
+**不要**在宿主 UI 或运行时直接使用 SwiftPM 的 `Bundle.module`：当已安装 `.app` 的资源布局与编译期假设不一致时，`Bundle.module` 可能断言失败（`EXC_BREAKPOINT`）。`PermissionFlowResources` 会搜索常见打包路径，且不会断言崩溃。
 
 ```swift
 import PermissionFlow
 
+// 推荐：可选 packageBundle + 默认文案
+if let bundle = PermissionFlowResources.packageBundle {
+    let title = bundle.localizedString(
+        forKey: "permission_flow.button.grant",
+        value: "授权",
+        table: nil
+    )
+}
+
+// 非可选便捷属性：优先包资源，找不到时回退 Bundle.main
 let bundle = PermissionFlowResources.bundle
 let title = bundle.localizedString(
-    forKey: "some.key",
-    value: "默认文案",
+    forKey: "permission_flow.button.grant",
+    value: "授权",
     table: nil
 )
 ```
 
 ```swift
 public enum PermissionFlowResources {
-    public static let bundle = Bundle.module
+    public static let resourceBundleName = "PermissionFlow_PermissionFlow"
+    public static var packageBundle: Bundle? { get } // 找不到时为 nil
+    public static var bundle: Bundle { get }         // packageBundle ?? .main
 }
 ```
+
+包内 UI（`PermissionFlowButton`、悬浮面板、拖拽卡片）已统一走上述可容错路径。
 
 ### `SystemSettings.open`
 
@@ -848,7 +916,8 @@ SystemSettings.open(.accessibility(anchor: "AX_ZOOM_MAX_FACTOR"))
 ```swift
 let configuration = PermissionFlowConfiguration(
     requiredAppURLs: [Bundle.main.bundleURL],
-    promptForAccessibilityTrust: false
+    promptForAccessibilityTrust: false,
+    localeIdentifier: "zh-Hans"
 )
 ```
 
@@ -856,6 +925,7 @@ let configuration = PermissionFlowConfiguration(
 
 - `requiredAppURLs`：预先注入到悬浮框中的应用
 - `promptForAccessibilityTrust`：是否主动请求辅助功能信任
+- `localeIdentifier`：在不经过 `PermissionFlowButton` / `.environment(\.locale, …)` 时，为悬浮面板设定初始语言
 
 ## 工作流程
 
@@ -863,7 +933,7 @@ let configuration = PermissionFlowConfiguration(
 2. `PermissionFlow` 自动打开对应的 `System Settings` 页面
 3. 如果该权限页支持拖拽式授权，则弹出悬浮辅助窗口
 4. 悬浮窗口从点击位置动画飞到 `System Settings` 窗口附近
-5. 悬浮窗口持续跟随 `System Settings` 窗口移动
+5. 悬浮窗口持续跟随 `System Settings` 窗口移动（AX 属性在转换前会做 `CFGetTypeID` / `AXValueGetTypeID` 校验；异常类型会跳过当前帧，避免崩溃）
 6. 用户把当前 `.app` 拖入系统授权列表
 
 ## 示例工程
@@ -875,8 +945,9 @@ let configuration = PermissionFlowConfiguration(
 - 悬浮辅助窗口只会在支持拖拽式授权的权限页上出现
 - **权限状态检测**：使用苹果官方 API（`CGPreflightListenEventAccess`、`CGPreflightScreenCaptureAccess`、`AXIsProcessTrusted`）进行准确的状态检查，不会触发系统提示
 - **状态刷新**：当应用回到前台以及按钮出现在屏幕上时，权限状态会自动刷新
+- **本地化**：优先对 `PermissionFlowButton` 使用 `.environment(\.locale, …)`；手动 controller 则使用 `localeIdentifier` / `setLocaleIdentifier(_:)`。宿主代码请使用 `PermissionFlowResources.packageBundle`（或 `bundle`），并始终提供默认文案，**不要**使用 `Bundle.module`，以免在安装包环境崩溃
 - `System Settings` 的具体行为由 macOS 控制，不同系统版本可能存在细微差异
-- 当辅助功能权限可用时，包会优先使用 AX 做更精确的窗口跟踪；Window Server 查询作为启动和兜底方案
+- 当辅助功能权限可用时，包会优先使用 AX 做更精确的窗口跟踪；Window Server 查询作为启动和兜底方案。AX 读取结果在转换前会做类型校验，异常类型返回 `nil` / 跳过当前帧
 - 这个包不会绕过 macOS 的系统安全模型，它只是帮助用户更顺畅地完成系统授权流程
 
 ## 许可证

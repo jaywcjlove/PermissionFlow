@@ -9,7 +9,10 @@ struct PermissionFlowPanelView: View {
         VStack(alignment: .leading, spacing: 6) {
             header
             if let primaryApp = controller.preferredAppURL {
-                AppDragItemView(url: primaryApp) { isDragging in
+                AppDragItemView(
+                    url: primaryApp,
+                    localeIdentifier: controller.localeIdentifier
+                ) { isDragging in
                     controller.setPanelDragging(isDragging)
                 }
                 .frame(maxWidth: .infinity)

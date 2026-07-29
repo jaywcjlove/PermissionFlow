@@ -5,16 +5,17 @@ import SwiftUI
 @available(macOS 13.0, *)
 struct AppDragItemView: NSViewRepresentable {
     let url: URL
+    let localeIdentifier: String?
     let onDragStateChange: (Bool) -> Void
 
     func makeNSView(context: Context) -> AppDragSourceView {
-        let view = AppDragSourceView(url: url)
+        let view = AppDragSourceView(url: url, localeIdentifier: localeIdentifier)
         view.onDragStateChange = onDragStateChange
         return view
     }
 
     func updateNSView(_ nsView: AppDragSourceView, context: Context) {
-        nsView.update(url: url)
+        nsView.update(url: url, localeIdentifier: localeIdentifier)
         nsView.onDragStateChange = onDragStateChange
     }
 }
@@ -22,6 +23,7 @@ struct AppDragItemView: NSViewRepresentable {
 @available(macOS 13.0, *)
 final class AppDragSourceView: NSView, NSDraggingSource {
     private var url: URL
+    private var localeIdentifier: String?
     private let hostingView: NSHostingView<AnyView>
     private var mouseDownPoint: NSPoint?
     private var hasBegunDragging = false
@@ -29,9 +31,15 @@ final class AppDragSourceView: NSView, NSDraggingSource {
     /// Tells the panel when it should temporarily become mouse-transparent.
     var onDragStateChange: ((Bool) -> Void)?
 
-    init(url: URL) {
+    init(url: URL, localeIdentifier: String?) {
         self.url = url
-        self.hostingView = NSHostingView(rootView: AnyView(AppDragCardContent(url: url).allowsHitTesting(false)))
+        self.localeIdentifier = localeIdentifier
+        self.hostingView = NSHostingView(
+            rootView: AnyView(
+                AppDragCardContent(url: url, localeIdentifier: localeIdentifier)
+                    .allowsHitTesting(false)
+            )
+        )
         super.init(frame: .zero)
 
         hostingView.translatesAutoresizingMaskIntoConstraints = false
@@ -49,9 +57,13 @@ final class AppDragSourceView: NSView, NSDraggingSource {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func update(url: URL) {
+    func update(url: URL, localeIdentifier: String?) {
         self.url = url
-        hostingView.rootView = AnyView(AppDragCardContent(url: url).allowsHitTesting(false))
+        self.localeIdentifier = localeIdentifier
+        hostingView.rootView = AnyView(
+            AppDragCardContent(url: url, localeIdentifier: localeIdentifier)
+                .allowsHitTesting(false)
+        )
         invalidateIntrinsicContentSize()
     }
 
@@ -161,6 +173,7 @@ private final class AppBundlePasteboardWriter: NSObject, NSPasteboardWriting {
 @available(macOS 13.0, *)
 private struct AppDragCardContent: View {
     let url: URL
+    let localeIdentifier: String?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -178,7 +191,7 @@ private struct AppDragCardContent: View {
             VStack(spacing: 0) {
                 Image(systemName: "hand.draw")
                     .font(.system(size: 14, weight: .regular))
-                Text("permission_flow.drag.label", bundle: .module)
+                Text(dragLabel)
                     .font(.system(size: 8, weight: .light))
             }
             .foregroundStyle(.secondary)
@@ -189,6 +202,16 @@ private struct AppDragCardContent: View {
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(.primary.opacity(0.085), style: StrokeStyle(lineWidth: 1, dash: []))
+        )
+    }
+
+    /// Loads drag-card copy via the resilient localizer so panel layout never
+    /// depends on `Bundle.module` in packaged apps.
+    private var dragLabel: String {
+        PermissionFlowLocalizer.string(
+            "permission_flow.drag.label",
+            defaultValue: "Drag",
+            localeIdentifier: localeIdentifier
         )
     }
 }

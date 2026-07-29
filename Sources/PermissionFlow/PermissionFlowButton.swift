@@ -52,7 +52,7 @@ public struct PermissionFlowButton: View {
                 customLabel(buttonState)
             } else {
                 Label {
-                    Text(title ?? LocalizedStringResource(String.LocalizationValue(buttonState.titleKey), locale: locale, bundle: .module))
+                    buttonTitleLabel
                 } icon: {
                     Image(systemName: buttonState.systemImage)
                         .foregroundColor(buttonState.isGranted ? .green : .primary)
@@ -62,6 +62,23 @@ public struct PermissionFlowButton: View {
         .onAppear(perform: refreshAuthorizationStatus)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshAuthorizationStatus()
+        }
+    }
+
+    /// Resolves package UI copy through the resilient localizer so installed
+    /// apps never touch `Bundle.module` during button layout.
+    @ViewBuilder
+    private var buttonTitleLabel: some View {
+        if let title {
+            Text(title)
+        } else {
+            Text(
+                PermissionFlowLocalizer.string(
+                    buttonState.titleKey,
+                    defaultValue: buttonState.defaultTitle,
+                    localeIdentifier: locale.identifier
+                )
+            )
         }
     }
 
