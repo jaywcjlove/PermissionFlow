@@ -211,47 +211,69 @@ final class SettingsWindowTracker {
 
     /// Reads an AX attribute expected to contain a single AXUIElement value.
     /// Used for attributes like main window and focused window.
+    /// Validates CF type before conversion so unexpected payloads degrade to nil.
     private func elementValue(for key: String, element: AXUIElement) -> AXUIElement? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(element, key as CFString, &value)
-        guard result == .success else { return nil }
+        guard result == .success, let value else { return nil }
+        guard CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+        // Safe after CFGetTypeID check: value is known to be an AXUIElement.
         return (value as! AXUIElement)
     }
 
     /// Reads an AX attribute expected to contain an array of AXUIElement values.
     /// Used as a fallback when main/focused window attributes are unavailable.
+    /// Validates CFArray and each element's type; skips non-element entries.
     private func arrayValue(for key: String, element: AXUIElement) -> [AXUIElement]? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(element, key as CFString, &value)
-        guard result == .success else { return nil }
-        return value as? [AXUIElement]
+        guard result == .success, let value else { return nil }
+        guard CFGetTypeID(value) == CFArrayGetTypeID() else { return nil }
+
+        let nsArray = value as! NSArray
+        var elements: [AXUIElement] = []
+        elements.reserveCapacity(nsArray.count)
+
+        for case let item as CFTypeRef in nsArray {
+            guard CFGetTypeID(item) == AXUIElementGetTypeID() else { continue }
+            // Safe after CFGetTypeID check: item is known to be an AXUIElement.
+            elements.append(item as! AXUIElement)
+        }
+
+        return elements.isEmpty ? nil : elements
     }
 
     /// Reads an AX CGPoint attribute such as kAXPositionAttribute.
+    /// Validates CF type and AXValue subtype before conversion to avoid crashes
+    /// when System Settings returns an unexpected attribute payload.
     private func pointValue(for key: String, element: AXUIElement) -> CGPoint? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(element, key as CFString, &value)
-        guard result == .success, let axValue = value else { return nil }
+        guard result == .success, let value else { return nil }
+        guard CFGetTypeID(value) == AXValueGetTypeID() else { return nil }
 
-        let pointValue = axValue as! AXValue
+        let pointValue = value as! AXValue
         guard AXValueGetType(pointValue) == .cgPoint else { return nil }
 
         var point = CGPoint.zero
-        AXValueGetValue(pointValue, .cgPoint, &point)
+        guard AXValueGetValue(pointValue, .cgPoint, &point) else { return nil }
         return point
     }
 
     /// Reads an AX CGSize attribute such as kAXSizeAttribute.
+    /// Validates CF type and AXValue subtype before conversion to avoid crashes
+    /// when System Settings returns an unexpected attribute payload.
     private func sizeValue(for key: String, element: AXUIElement) -> CGSize? {
         var value: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(element, key as CFString, &value)
-        guard result == .success, let axValue = value else { return nil }
+        guard result == .success, let value else { return nil }
+        guard CFGetTypeID(value) == AXValueGetTypeID() else { return nil }
 
-        let sizeValue = axValue as! AXValue
+        let sizeValue = value as! AXValue
         guard AXValueGetType(sizeValue) == .cgSize else { return nil }
 
         var size = CGSize.zero
-        AXValueGetValue(sizeValue, .cgSize, &size)
+        guard AXValueGetValue(sizeValue, .cgSize, &size) else { return nil }
         return size
     }
 
