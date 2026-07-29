@@ -57,7 +57,7 @@ struct ContentView: View {
                 Text("Each button opens the corresponding system settings privacy page. Only permission pages that support drag-and-drop app addition will show the floating authorization window. It's recommended to drag in the current Example.app by default.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
-                Text("Permission pages like Automation, Camera, and Files & Folders that don't natively support drag-and-drop app addition will only open the settings interface without showing the floating window. Microphone and Calendars use the system authorization prompt (no floating drag panel).")
+                Text("Permission pages like Automation, Camera, and Files & Folders that don't natively support drag-and-drop app addition will only open the settings interface without showing the floating window. Microphone, Calendars, and Reminders use the system authorization prompt (no floating drag panel).")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
 #else
@@ -108,6 +108,7 @@ struct ContentView: View {
                 PermissionFlowButton(title: "Media AppleMusic", pane: .mediaAppleMusic)
                 PermissionFlowButton(title: "Microphone", pane: .microphone)
                 PermissionFlowButton(title: "Calendars", pane: .calendars)
+                PermissionFlowButton(title: "Reminders", pane: .reminders)
                 PermissionFlowButton(title: "Screen Recording", pane: .screenRecording)
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), alignment: .leading)], spacing: 5) {
@@ -120,6 +121,7 @@ struct ContentView: View {
                 PermissionFlowButton(pane: .mediaAppleMusic)
                 PermissionFlowButton(pane: .microphone)
                 PermissionFlowButton(pane: .calendars)
+                PermissionFlowButton(pane: .reminders)
                 PermissionFlowButton(pane: .screenRecording)
             }
 #endif

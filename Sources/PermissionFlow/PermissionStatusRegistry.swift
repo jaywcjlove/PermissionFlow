@@ -20,6 +20,7 @@ public enum PermissionStatusRegistry {
         .calendars: CalendarPermissionStatusProvider(),
         .fullDiskAccess: FullDiskAccessPermissionStatusProvider(),
         .microphone: MicrophonePermissionStatusProvider(),
+        .reminders: RemindersPermissionStatusProvider(),
     ]
 
     /// Registers or replaces a provider for a specific permission pane.

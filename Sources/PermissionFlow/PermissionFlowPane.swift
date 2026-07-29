@@ -25,6 +25,11 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
     case mediaAppleMusic
     /// Microphone permissions list.
     case microphone
+    /// Reminders permissions list.
+    ///
+    /// Requires reminders usage description keys in the host `Info.plist`.
+    /// Does not use the floating drag panel; opens System Settings only.
+    case reminders
     /// Screen Recording permissions list.
     case screenRecording
 
@@ -40,6 +45,7 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
         case .inputMonitoring: .privacyListenEvent
         case .mediaAppleMusic: .privacyMedia
         case .microphone: .privacyMicrophone
+        case .reminders: .privacyReminders
         case .screenRecording: .privacyScreenCapture
         }
     }
@@ -47,7 +53,7 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
     /// Whether this pane supports the app-list drag authorization panel.
     public var supportsFloatingAuthorizationPanel: Bool {
         switch self {
-        case .calendars, .microphone:
+        case .calendars, .microphone, .reminders:
             false
         default:
             true
@@ -114,6 +120,12 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
             return PermissionFlowLocalizer.string(
                 "permission_flow.pane.microphone",
                 defaultValue: "Microphone",
+                localeIdentifier: localeIdentifier
+            )
+        case .reminders:
+            return PermissionFlowLocalizer.string(
+                "permission_flow.pane.reminders",
+                defaultValue: "Reminders",
                 localeIdentifier: localeIdentifier
             )
         case .screenRecording:

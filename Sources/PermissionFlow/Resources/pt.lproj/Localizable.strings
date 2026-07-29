@@ -5,6 +5,7 @@
 "permission_flow.pane.accessibility" = "Acessibilidade";
 "permission_flow.pane.bluetooth" = "Bluetooth";
 "permission_flow.pane.calendars" = "Calendários";
+"permission_flow.pane.reminders" = "Lembretes";
 "permission_flow.pane.developer_tools" = "Ferramentas de desenvolvedor";
 "permission_flow.pane.full_disk_access" = "Acesso total ao disco";
 "permission_flow.pane.input_monitoring" = "Monitoramento de entrada";

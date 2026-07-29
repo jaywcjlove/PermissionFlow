@@ -143,7 +143,7 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 
 ## 支持的权限页面
 
-`PermissionFlow` 覆盖以下权限页。大多数权限使用悬浮框 + 拖拽授权流程；`.microphone` 与 `.calendars` 使用系统授权弹窗，并只打开系统设置（不显示悬浮拖拽面板）。
+`PermissionFlow` 覆盖以下权限页。大多数权限使用悬浮框 + 拖拽授权流程；`.microphone`、`.calendars` 与 `.reminders` 使用系统授权弹窗，并只打开系统设置（不显示悬浮拖拽面板）。
 
 - `.accessibility`：打开 `隐私与安全性 > 辅助功能`。✅ **支持状态检测**
 - `.fullDiskAccess`：打开 `隐私与安全性 > 完全磁盘访问权限`。✅ **支持状态检测**
@@ -151,6 +151,7 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 - `.screenRecording`：打开 `隐私与安全性 > 屏幕录制`。✅ **支持状态检测**
 - `.microphone`：请求麦克风授权，并在需要时打开 `隐私与安全性 > 麦克风`。✅ **支持状态检测**（无悬浮面板）
 - `.calendars`：请求日历授权，并打开 `隐私与安全性 > 日历`。✅ **支持状态检测**（无悬浮面板；宿主需配置 `Info.plist`）
+- `.reminders`：请求提醒事项授权，并打开 `隐私与安全性 > 提醒事项`。✅ **支持状态检测**（无悬浮面板；宿主需配置 `Info.plist`）
 - `.bluetooth`：打开 `隐私与安全性 > 蓝牙`。✅ **支持状态检测**
 - `.mediaAppleMusic`：打开 `隐私与安全性 > 媒体与 Apple Music`。✅ **支持状态检测**
 - `.appManagement`：打开 `隐私与安全性 > App 管理`。⚠️ 状态检测不可用
@@ -160,7 +161,7 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 
 - ✅ **已授权**：绿色勾选图标，显示"已授权"文字
 - ➡️ **未授权**：蓝色箭头图标，显示"授权"文字
-- `PermissionFlow` 内置支持：`.accessibility`、`.fullDiskAccess`、`.microphone`、`.calendars`
+- `PermissionFlow` 内置支持：`.accessibility`、`.fullDiskAccess`、`.microphone`、`.calendars`、`.reminders`
 - 可通过可选状态扩展启用：`.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording`
 - 🔄 **检查中**：时钟图标，显示"检查中..."文字
 - ❓ **未知**：蓝色箭头图标，显示"打开"文字（不支持检测时）
@@ -220,6 +221,35 @@ let provider = CalendarPermissionStatusProvider()
 let state = provider.authorizationState() // 当 EKAuthorizationStatus.fullAccess 时为 .granted
 // 等价判断：
 // EKEventStore.authorizationStatus(for: .event) == .fullAccess
+```
+
+### Reminders
+
+与 [Calendars](#calendars) 相同模式：系统弹窗 + 打开系统设置（无悬浮拖拽面板）。状态使用 EventKit 的 `EKEntityType.reminder`。
+
+```xml
+<key>NSRemindersUsageDescription</key>
+<string>此应用需要访问提醒事项以管理任务。</string>
+
+<!-- 新版 macOS（macOS 14+）完整提醒事项访问所需 -->
+<key>NSRemindersFullAccessUsageDescription</key>
+<string>此应用需要完整提醒事项访问权限以读取和管理任务。</string>
+```
+
+若开启 App Sandbox，需授予 EventKit 个人数据访问（macOS 上 EventKit 通常需要日历沙盒权限）：
+
+```xml
+<key>com.apple.security.personal-information.calendars</key>
+<true/>
+```
+
+完整手动 UI 示例见 [手动 Reminders 授权](#手动-reminders-授权)。
+
+```swift
+let provider = RemindersPermissionStatusProvider()
+let state = provider.authorizationState() // 当 EKAuthorizationStatus.fullAccess 时为 .granted
+// 等价判断：
+// EKEventStore.authorizationStatus(for: .reminder) == .fullAccess
 ```
 
 ### Camera
@@ -372,6 +402,7 @@ struct PermissionBadge: View {
 | `.fullDiskAccess` | ✅ |  |  |
 | `.microphone` | ✅ |  |  |
 | `.calendars` | ✅ |  |  |
+| `.reminders` | ✅ |  |  |
 | `.bluetooth` |  | ✅ |  |
 | `.inputMonitoring` |  | ✅ |  |
 | `.mediaAppleMusic` |  | ✅ |  |
@@ -592,6 +623,93 @@ func isCalendarsGranted() -> Bool {
     CalendarPermissionStatusProvider().hasFullAccess()
     // 等价于：
     // PermissionStatusRegistry.provider(for: .calendars).authorizationState() == .granted
+}
+```
+
+### 手动 Reminders 授权
+
+与 Calendars 相同流程，使用 `RemindersPermissionStatusProvider` 和提醒事项设置页。先完成宿主配置（见 [Reminders](#reminders)）。
+
+```swift
+import AppKit
+import PermissionFlow
+import SystemSettingsKit
+import SwiftUI
+
+struct ManualRemindersPermissionView: View {
+    @State private var authorizationState: PermissionAuthorizationState = .checking
+
+    private let didBecomeActive = NotificationCenter.default.publisher(
+        for: NSApplication.didBecomeActiveNotification
+    )
+
+    var body: some View {
+        Button {
+            requestRemindersAccess()
+        } label: {
+            let buttonState = PermissionFlowButtonState.make(from: authorizationState)
+            Label(title(for: authorizationState), systemImage: buttonState.systemImage)
+                .foregroundStyle(buttonState.isGranted ? .green : .primary)
+        }
+        .onAppear(perform: refreshStatus)
+        .onReceive(didBecomeActive) { _ in
+            refreshStatus()
+        }
+    }
+
+    private func refreshStatus() {
+        authorizationState = PermissionStatusRegistry
+            .provider(for: .reminders)
+            .authorizationState()
+
+        // 或：
+        // authorizationState = RemindersPermissionStatusProvider().authorizationState()
+    }
+
+    private func requestRemindersAccess() {
+        authorizationState = .checking
+
+        RemindersPermissionStatusProvider().requestAuthorization { state in
+            Task { @MainActor in
+                authorizationState = state
+                SystemSettings.open(.privacy(anchor: .privacyReminders))
+                // 等价写法：
+                // PermissionFlow.makeController().authorize(pane: .reminders)
+            }
+        }
+    }
+
+    private func title(for state: PermissionAuthorizationState) -> String {
+        switch state {
+        case .granted:
+            "已授权"
+        case .notGranted:
+            "请求提醒事项权限"
+        case .unknown:
+            "打开提醒事项设置"
+        case .checking:
+            "检查中..."
+        }
+    }
+}
+```
+
+无 UI 的最小用法：
+
+```swift
+import PermissionFlow
+import SystemSettingsKit
+
+func openRemindersPermission() {
+    RemindersPermissionStatusProvider().requestAuthorization { _ in
+        DispatchQueue.main.async {
+            SystemSettings.open(.privacy(anchor: .privacyReminders))
+        }
+    }
+}
+
+func isRemindersGranted() -> Bool {
+    RemindersPermissionStatusProvider().hasFullAccess()
 }
 ```
 
@@ -883,6 +1001,7 @@ SystemSettings.open(.privacy(anchor: .security))
 - `.mediaAppleMusic`：打开 `隐私与安全性 > Media & Apple Music`。✅ **支持状态检测**
 - `.microphone`：请求麦克风授权，并在需要时打开 `隐私与安全性 > Microphone`。✅ **支持状态检测**
 - `.calendars`：请求日历授权，并打开 `隐私与安全性 > Calendars`（无悬浮拖拽面板）。✅ **支持状态检测**
+- `.reminders`：请求提醒事项授权，并打开 `隐私与安全性 > Reminders`（无悬浮拖拽面板）。✅ **支持状态检测**
 - `.screenRecording`：打开 `隐私与安全性 > Screen Recording`。
 
 当前内置的隐私与安全性强类型锚点，以及它们实际跳转到的位置：

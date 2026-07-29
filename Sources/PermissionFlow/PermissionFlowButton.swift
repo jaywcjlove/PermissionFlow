@@ -97,6 +97,8 @@ public struct PermissionFlowButton: View {
             requestMicrophoneAuthorization()
         case .calendars:
             requestCalendarAuthorization()
+        case .reminders:
+            requestRemindersAuthorization()
         default:
             controller.authorize(
                 pane: pane,
@@ -125,6 +127,18 @@ public struct PermissionFlowButton: View {
                 // Calendars does not support drag-to-list authorization; after
                 // the system prompt (when needed) we only open the settings pane.
                 controller.authorize(pane: .calendars)
+            }
+        }
+    }
+
+    private func requestRemindersAuthorization() {
+        buttonState = PermissionFlowButtonState.make(from: .checking)
+        RemindersPermissionStatusProvider().requestAuthorization { authorizationState in
+            Task { @MainActor in
+                buttonState = PermissionFlowButtonState.make(from: authorizationState)
+                // Reminders does not support drag-to-list authorization; after
+                // the system prompt (when needed) we only open the settings pane.
+                controller.authorize(pane: .reminders)
             }
         }
     }

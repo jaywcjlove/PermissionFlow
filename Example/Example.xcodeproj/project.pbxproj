@@ -301,6 +301,8 @@
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "PermissionFlow demo uses calendar permission for authorization flow testing.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "PermissionFlow demo uses calendar permission for authorization flow testing.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "PermissionFlow demo uses microphone permission for authorization flow testing.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "PermissionFlow demo uses reminders permission for authorization flow testing.";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "PermissionFlow demo uses reminders permission for authorization flow testing.";
 				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "PermissionFlow demo uses screen recording permission for authorization flow testing.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -354,6 +356,8 @@
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "PermissionFlow demo uses calendar permission for authorization flow testing.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "PermissionFlow demo uses calendar permission for authorization flow testing.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "PermissionFlow demo uses microphone permission for authorization flow testing.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "PermissionFlow demo uses reminders permission for authorization flow testing.";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "PermissionFlow demo uses reminders permission for authorization flow testing.";
 				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "PermissionFlow demo uses screen recording permission for authorization flow testing.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -144,7 +144,7 @@ Platform support:
 
 ## Supported Permission Panes
 
-`PermissionFlow` covers these privacy panes. Most use the floating drag-and-drop authorization workflow; `.microphone` and `.calendars` use the system permission prompt and only open System Settings (no floating drag panel).
+`PermissionFlow` covers these privacy panes. Most use the floating drag-and-drop authorization workflow; `.microphone`, `.calendars`, and `.reminders` use the system permission prompt and only open System Settings (no floating drag panel).
 
 - `.accessibility`: Opens `Privacy & Security > Accessibility`. ✅ **Status Detection Supported**
 - `.fullDiskAccess`: Opens `Privacy & Security > Full Disk Access`. ✅ **Status Detection Supported**
@@ -152,6 +152,7 @@ Platform support:
 - `.screenRecording`: Opens `Privacy & Security > Screen Recording`. ✅ **Status Detection Supported**
 - `.microphone`: Requests microphone authorization and opens `Privacy & Security > Microphone` when settings access is needed. ✅ **Status Detection Supported** (no floating panel)
 - `.calendars`: Requests calendar authorization and opens `Privacy & Security > Calendars`. ✅ **Status Detection Supported** (no floating panel; host `Info.plist` required)
+- `.reminders`: Requests reminders authorization and opens `Privacy & Security > Reminders`. ✅ **Status Detection Supported** (no floating panel; host `Info.plist` required)
 - `.bluetooth`: Opens `Privacy & Security > Bluetooth`. ✅ **Supports status detection**
 - `.mediaAppleMusic`: Opens `Privacy & Security > Media & Apple Music`. ✅ **Supports status detection**
 - `.appManagement`: Opens `Privacy & Security > App Management`. ⚠️ Status detection not available
@@ -160,7 +161,7 @@ Platform support:
 **Permission Status Display**: For supported permissions, `PermissionFlowButton` automatically displays the current authorization status:
 - ✅ **Granted**: Green checkmark icon with "Granted" text
 - ➡️ **Not Granted**: Blue arrow icon with "Grant" text  
-- Built into `PermissionFlow`: `.accessibility`, `.fullDiskAccess`, `.microphone`, `.calendars`
+- Built into `PermissionFlow`: `.accessibility`, `.fullDiskAccess`, `.microphone`, `.calendars`, `.reminders`
 - Available through optional status extensions: `.bluetooth`, `.inputMonitoring`, `.mediaAppleMusic`, `.screenRecording`
 - 🔄 **Checking**: Clock icon with "Checking..." text
 - ❓ **Unknown**: Blue arrow icon with "Open" text (for unsupported detection)
@@ -220,6 +221,35 @@ let provider = CalendarPermissionStatusProvider()
 let state = provider.authorizationState() // .granted when EKAuthorizationStatus.fullAccess
 // Equivalent check:
 // EKEventStore.authorizationStatus(for: .event) == .fullAccess
+```
+
+### Reminders
+
+Same pattern as [Calendars](#calendars): system prompt + open System Settings (no floating drag panel). Status uses EventKit with `EKEntityType.reminder`.
+
+```xml
+<key>NSRemindersUsageDescription</key>
+<string>This app needs reminders access to manage tasks.</string>
+
+<!-- Required for full reminders access on newer macOS (macOS 14+) -->
+<key>NSRemindersFullAccessUsageDescription</key>
+<string>This app needs full reminders access to read and manage tasks.</string>
+```
+
+If App Sandbox is enabled, grant EventKit personal-data access (Calendars sandbox entitlement is typically required for EventKit on macOS):
+
+```xml
+<key>com.apple.security.personal-information.calendars</key>
+<true/>
+```
+
+For a full manual UI example, see [Manual Reminders authorization](#manual-reminders-authorization).
+
+```swift
+let provider = RemindersPermissionStatusProvider()
+let state = provider.authorizationState() // .granted when EKAuthorizationStatus.fullAccess
+// Equivalent check:
+// EKEventStore.authorizationStatus(for: .reminder) == .fullAccess
 ```
 
 ### Camera
@@ -372,6 +402,7 @@ struct PermissionBadge: View {
 | `.fullDiskAccess` | ✅ |  |  |
 | `.microphone` | ✅ |  |  |
 | `.calendars` | ✅ |  |  |
+| `.reminders` | ✅ |  |  |
 | `.bluetooth` |  | ✅ |  |
 | `.inputMonitoring` |  | ✅ |  |
 | `.mediaAppleMusic` |  | ✅ |  |
@@ -594,6 +625,93 @@ func isCalendarsGranted() -> Bool {
     CalendarPermissionStatusProvider().hasFullAccess()
     // Same as:
     // PermissionStatusRegistry.provider(for: .calendars).authorizationState() == .granted
+}
+```
+
+### Manual Reminders authorization
+
+Same flow as Calendars, with `RemindersPermissionStatusProvider` and the Reminders settings pane. Host setup first (see [Reminders](#reminders)).
+
+```swift
+import AppKit
+import PermissionFlow
+import SystemSettingsKit
+import SwiftUI
+
+struct ManualRemindersPermissionView: View {
+    @State private var authorizationState: PermissionAuthorizationState = .checking
+
+    private let didBecomeActive = NotificationCenter.default.publisher(
+        for: NSApplication.didBecomeActiveNotification
+    )
+
+    var body: some View {
+        Button {
+            requestRemindersAccess()
+        } label: {
+            let buttonState = PermissionFlowButtonState.make(from: authorizationState)
+            Label(title(for: authorizationState), systemImage: buttonState.systemImage)
+                .foregroundStyle(buttonState.isGranted ? .green : .primary)
+        }
+        .onAppear(perform: refreshStatus)
+        .onReceive(didBecomeActive) { _ in
+            refreshStatus()
+        }
+    }
+
+    private func refreshStatus() {
+        authorizationState = PermissionStatusRegistry
+            .provider(for: .reminders)
+            .authorizationState()
+
+        // Or:
+        // authorizationState = RemindersPermissionStatusProvider().authorizationState()
+    }
+
+    private func requestRemindersAccess() {
+        authorizationState = .checking
+
+        RemindersPermissionStatusProvider().requestAuthorization { state in
+            Task { @MainActor in
+                authorizationState = state
+                SystemSettings.open(.privacy(anchor: .privacyReminders))
+                // Equivalent:
+                // PermissionFlow.makeController().authorize(pane: .reminders)
+            }
+        }
+    }
+
+    private func title(for state: PermissionAuthorizationState) -> String {
+        switch state {
+        case .granted:
+            "Granted"
+        case .notGranted:
+            "Request Reminders"
+        case .unknown:
+            "Open Reminders Settings"
+        case .checking:
+            "Checking..."
+        }
+    }
+}
+```
+
+Minimal non-UI version:
+
+```swift
+import PermissionFlow
+import SystemSettingsKit
+
+func openRemindersPermission() {
+    RemindersPermissionStatusProvider().requestAuthorization { _ in
+        DispatchQueue.main.async {
+            SystemSettings.open(.privacy(anchor: .privacyReminders))
+        }
+    }
+}
+
+func isRemindersGranted() -> Bool {
+    RemindersPermissionStatusProvider().hasFullAccess()
 }
 ```
 
@@ -889,6 +1007,7 @@ The existing `PermissionFlowPane` type continues to handle the privacy pages use
 - `.mediaAppleMusic`: Opens `Privacy & Security > Media & Apple Music`.
 - `.microphone`: Requests microphone authorization and opens `Privacy & Security > Microphone` when settings access is needed.
 - `.calendars`: Requests calendar authorization and opens `Privacy & Security > Calendars` (no floating drag panel).
+- `.reminders`: Requests reminders authorization and opens `Privacy & Security > Reminders` (no floating drag panel).
 - `.screenRecording`: Opens `Privacy & Security > Screen Recording`.
 
 Available typed privacy anchors and their destinations:
