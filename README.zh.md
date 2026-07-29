@@ -143,13 +143,14 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 
 ## 支持的权限页面
 
-`PermissionFlow` 覆盖以下权限页。大多数权限使用悬浮框 + 拖拽授权流程；`.microphone` 使用系统麦克风授权弹窗。
+`PermissionFlow` 覆盖以下权限页。大多数权限使用悬浮框 + 拖拽授权流程；`.microphone` 与 `.calendars` 使用系统授权弹窗，并只打开系统设置（不显示悬浮拖拽面板）。
 
 - `.accessibility`：打开 `隐私与安全性 > 辅助功能`。✅ **支持状态检测**
 - `.fullDiskAccess`：打开 `隐私与安全性 > 完全磁盘访问权限`。✅ **支持状态检测**
 - `.inputMonitoring`：打开 `隐私与安全性 > 输入监控`。✅ **支持状态检测**
 - `.screenRecording`：打开 `隐私与安全性 > 屏幕录制`。✅ **支持状态检测**
-- `.microphone`：请求麦克风授权，并在需要时打开 `隐私与安全性 > 麦克风`。✅ **支持状态检测**
+- `.microphone`：请求麦克风授权，并在需要时打开 `隐私与安全性 > 麦克风`。✅ **支持状态检测**（无悬浮面板）
+- `.calendars`：请求日历授权，并打开 `隐私与安全性 > 日历`。✅ **支持状态检测**（无悬浮面板；宿主需配置 `Info.plist`）
 - `.bluetooth`：打开 `隐私与安全性 > 蓝牙`。✅ **支持状态检测**
 - `.mediaAppleMusic`：打开 `隐私与安全性 > 媒体与 Apple Music`。✅ **支持状态检测**
 - `.appManagement`：打开 `隐私与安全性 > App 管理`。⚠️ 状态检测不可用
@@ -159,7 +160,7 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 
 - ✅ **已授权**：绿色勾选图标，显示"已授权"文字
 - ➡️ **未授权**：蓝色箭头图标，显示"授权"文字
-- `PermissionFlow` 内置支持：`.accessibility`、`.fullDiskAccess`、`.microphone`
+- `PermissionFlow` 内置支持：`.accessibility`、`.fullDiskAccess`、`.microphone`、`.calendars`
 - 可通过可选状态扩展启用：`.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording`
 - 🔄 **检查中**：时钟图标，显示"检查中..."文字
 - ❓ **未知**：蓝色箭头图标，显示"打开"文字（不支持检测时）
@@ -184,6 +185,41 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 ```xml
 <key>com.apple.security.device.audio-input</key>
 <true/>
+```
+
+### Calendars
+
+当你请求 `.calendars` 或调用 EventKit 日历授权 API 时配置。宿主在 `Info.plist` 声明用途描述，并在**成功完成一次访问请求**后，应用会出现在 **隐私与安全性 > 日历** 列表中。该权限页**不支持**拖拽到列表授权——`PermissionFlow` 只会打开对应设置页。
+
+```xml
+<!-- 旧版 macOS / 兼容所需 -->
+<key>NSCalendarsUsageDescription</key>
+<string>此应用需要访问日历以管理事件。</string>
+
+<!-- 新版 macOS（macOS 14+）完整日历访问所需 -->
+<key>NSCalendarsFullAccessUsageDescription</key>
+<string>此应用需要完整日历访问权限以读取和管理事件。</string>
+```
+
+若宿主开启了 **App Sandbox**，还必须打开日历访问：
+
+- Xcode：**Signing & Capabilities > App Sandbox > App Data > Calendars**
+- 或 entitlement：
+
+```xml
+<key>com.apple.security.personal-information.calendars</key>
+<true/>
+```
+
+缺少该沙盒权限时，`requestFullAccessToEvents` 无法在 TCC 中注册应用，**设置列表里不会出现该 App**。
+
+状态通过 EventKit 读取。完整的**不使用** `PermissionFlowButton` 的手动 UI 示例见 [手动 Calendars 授权](#手动-calendars-授权)。
+
+```swift
+let provider = CalendarPermissionStatusProvider()
+let state = provider.authorizationState() // 当 EKAuthorizationStatus.fullAccess 时为 .granted
+// 等价判断：
+// EKEventStore.authorizationStatus(for: .event) == .fullAccess
 ```
 
 ### Camera
@@ -335,6 +371,7 @@ struct PermissionBadge: View {
 | `.accessibility` | ✅ |  |  |
 | `.fullDiskAccess` | ✅ |  |  |
 | `.microphone` | ✅ |  |  |
+| `.calendars` | ✅ |  |  |
 | `.bluetooth` |  | ✅ |  |
 | `.inputMonitoring` |  | ✅ |  |
 | `.mediaAppleMusic` |  | ✅ |  |
@@ -456,6 +493,105 @@ struct ManualPermissionButton: View {
         let mouse = NSEvent.mouseLocation
         return CGRect(x: mouse.x - 16, y: mouse.y - 16, width: 32, height: 32)
     }
+}
+```
+
+### 手动 Calendars 授权
+
+`.calendars` **不会**显示悬浮拖拽面板。你可以完全不用 `PermissionFlowButton`：用 `CalendarPermissionStatusProvider` 请求系统日历授权，再打开「隐私与安全性 > 日历」设置页。
+
+先完成宿主配置（见 [Calendars](#calendars)）：
+
+1. `Info.plist` 中配置 `NSCalendarsUsageDescription` 与 `NSCalendarsFullAccessUsageDescription`
+2. 若开启 App Sandbox，需打开 **Calendars** 权限
+
+```swift
+import AppKit
+import PermissionFlow
+import SystemSettingsKit
+import SwiftUI
+
+struct ManualCalendarsPermissionView: View {
+    @State private var authorizationState: PermissionAuthorizationState = .checking
+
+    private let didBecomeActive = NotificationCenter.default.publisher(
+        for: NSApplication.didBecomeActiveNotification
+    )
+
+    var body: some View {
+        Button {
+            requestCalendarAccess()
+        } label: {
+            let buttonState = PermissionFlowButtonState.make(from: authorizationState)
+            Label(title(for: authorizationState), systemImage: buttonState.systemImage)
+                .foregroundStyle(buttonState.isGranted ? .green : .primary)
+        }
+        .onAppear(perform: refreshStatus)
+        .onReceive(didBecomeActive) { _ in
+            refreshStatus()
+        }
+    }
+
+    private func refreshStatus() {
+        // 内置的 .calendars 状态 provider
+        authorizationState = PermissionStatusRegistry
+            .provider(for: .calendars)
+            .authorizationState()
+
+        // 或直接使用：
+        // authorizationState = CalendarPermissionStatusProvider().authorizationState()
+    }
+
+    private func requestCalendarAccess() {
+        authorizationState = .checking
+
+        CalendarPermissionStatusProvider().requestAuthorization { state in
+            Task { @MainActor in
+                authorizationState = state
+
+                // 无悬浮面板，只打开系统设置
+                SystemSettings.open(.privacy(anchor: .privacyCalendars))
+
+                // 等价写法：
+                // PermissionFlow.makeController().authorize(pane: .calendars)
+            }
+        }
+    }
+
+    private func title(for state: PermissionAuthorizationState) -> String {
+        switch state {
+        case .granted:
+            "已授权"
+        case .notGranted:
+            "请求日历权限"
+        case .unknown:
+            "打开日历设置"
+        case .checking:
+            "检查中..."
+        }
+    }
+}
+```
+
+无 UI 的最小用法：
+
+```swift
+import PermissionFlow
+import SystemSettingsKit
+
+func openCalendarsPermission() {
+    CalendarPermissionStatusProvider().requestAuthorization { _ in
+        // 系统弹窗结束后打开设置，方便用户切换 Full Access / 开关
+        DispatchQueue.main.async {
+            SystemSettings.open(.privacy(anchor: .privacyCalendars))
+        }
+    }
+}
+
+func isCalendarsGranted() -> Bool {
+    CalendarPermissionStatusProvider().hasFullAccess()
+    // 等价于：
+    // PermissionStatusRegistry.provider(for: .calendars).authorizationState() == .granted
 }
 ```
 
@@ -746,6 +882,7 @@ SystemSettings.open(.privacy(anchor: .security))
 - `.inputMonitoring`：打开 `隐私与安全性 > Input Monitoring`。
 - `.mediaAppleMusic`：打开 `隐私与安全性 > Media & Apple Music`。✅ **支持状态检测**
 - `.microphone`：请求麦克风授权，并在需要时打开 `隐私与安全性 > Microphone`。✅ **支持状态检测**
+- `.calendars`：请求日历授权，并打开 `隐私与安全性 > Calendars`（无悬浮拖拽面板）。✅ **支持状态检测**
 - `.screenRecording`：打开 `隐私与安全性 > Screen Recording`。
 
 当前内置的隐私与安全性强类型锚点，以及它们实际跳转到的位置：

@@ -4,6 +4,7 @@
 "permission_flow.pane.app_management" = "Gestion des apps";
 "permission_flow.pane.accessibility" = "Accessibilité";
 "permission_flow.pane.bluetooth" = "Bluetooth";
+"permission_flow.pane.calendars" = "Calendriers";
 "permission_flow.pane.developer_tools" = "Outils de développement";
 "permission_flow.pane.full_disk_access" = "Accès complet au disque";
 "permission_flow.pane.input_monitoring" = "Surveillance de la saisie";

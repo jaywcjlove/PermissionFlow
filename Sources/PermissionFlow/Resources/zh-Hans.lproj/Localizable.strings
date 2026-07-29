@@ -4,6 +4,7 @@
 "permission_flow.pane.app_management" = "App 管理";
 "permission_flow.pane.accessibility" = "辅助功能";
 "permission_flow.pane.bluetooth" = "蓝牙";
+"permission_flow.pane.calendars" = "日历";
 "permission_flow.pane.developer_tools" = "开发者工具";
 "permission_flow.pane.full_disk_access" = "完全磁盘访问";
 "permission_flow.pane.input_monitoring" = "输入监控";

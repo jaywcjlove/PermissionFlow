@@ -4,6 +4,7 @@
 "permission_flow.pane.app_management" = "앱 관리";
 "permission_flow.pane.accessibility" = "손쉬운 사용";
 "permission_flow.pane.bluetooth" = "Bluetooth";
+"permission_flow.pane.calendars" = "캘린더";
 "permission_flow.pane.developer_tools" = "개발자 도구";
 "permission_flow.pane.full_disk_access" = "전체 디스크 접근";
 "permission_flow.pane.input_monitoring" = "입력 모니터링";

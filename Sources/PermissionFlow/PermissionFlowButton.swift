@@ -92,16 +92,18 @@ public struct PermissionFlowButton: View {
     private func authorize() {
         controller.setLocaleIdentifier(locale.identifier)
 
-        if pane == .microphone {
+        switch pane {
+        case .microphone:
             requestMicrophoneAuthorization()
-            return
+        case .calendars:
+            requestCalendarAuthorization()
+        default:
+            controller.authorize(
+                pane: pane,
+                suggestedAppURLs: suggestedAppURLs,
+                sourceFrameInScreen: clickSourceFrameInScreen()
+            )
         }
-
-        controller.authorize(
-            pane: pane,
-            suggestedAppURLs: suggestedAppURLs,
-            sourceFrameInScreen: clickSourceFrameInScreen()
-        )
     }
 
     private func requestMicrophoneAuthorization() {
@@ -109,7 +111,20 @@ public struct PermissionFlowButton: View {
         MicrophonePermissionStatusProvider().requestAuthorization { authorizationState in
             Task { @MainActor in
                 buttonState = PermissionFlowButtonState.make(from: authorizationState)
+                // Opens System Settings only; no floating drag panel.
                 controller.authorize(pane: .microphone)
+            }
+        }
+    }
+
+    private func requestCalendarAuthorization() {
+        buttonState = PermissionFlowButtonState.make(from: .checking)
+        CalendarPermissionStatusProvider().requestAuthorization { authorizationState in
+            Task { @MainActor in
+                buttonState = PermissionFlowButtonState.make(from: authorizationState)
+                // Calendars does not support drag-to-list authorization; after
+                // the system prompt (when needed) we only open the settings pane.
+                controller.authorize(pane: .calendars)
             }
         }
     }

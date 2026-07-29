@@ -10,6 +10,11 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
     case accessibility
     /// Bluetooth permissions list.
     case bluetooth
+    /// Calendars permissions list.
+    ///
+    /// Requires calendar usage description keys in the host `Info.plist`.
+    /// Does not use the floating drag panel; opens System Settings only.
+    case calendars
     /// Developer Tools permissions list.
     case developerTools
     /// Full Disk Access permissions list.
@@ -29,6 +34,7 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
         case .appManagement: .privacyAppBundles
         case .accessibility: .privacyAccessibility
         case .bluetooth: .privacyBluetooth
+        case .calendars: .privacyCalendars
         case .developerTools: .privacyDevTools
         case .fullDiskAccess: .privacyAllFiles
         case .inputMonitoring: .privacyListenEvent
@@ -41,7 +47,7 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
     /// Whether this pane supports the app-list drag authorization panel.
     public var supportsFloatingAuthorizationPanel: Bool {
         switch self {
-        case .microphone:
+        case .calendars, .microphone:
             false
         default:
             true
@@ -72,6 +78,12 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
             return PermissionFlowLocalizer.string(
                 "permission_flow.pane.bluetooth",
                 defaultValue: "Bluetooth",
+                localeIdentifier: localeIdentifier
+            )
+        case .calendars:
+            return PermissionFlowLocalizer.string(
+                "permission_flow.pane.calendars",
+                defaultValue: "Calendars",
                 localeIdentifier: localeIdentifier
             )
         case .developerTools:

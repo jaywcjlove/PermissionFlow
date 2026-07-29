@@ -287,7 +287,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
 				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
 				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
@@ -298,6 +298,8 @@
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "PermissionFlow demo may open and guide System Settings for authorization.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "PermissionFlow demo uses camera permission for authorization flow testing.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "PermissionFlow demo uses calendar permission for authorization flow testing.";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "PermissionFlow demo uses calendar permission for authorization flow testing.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "PermissionFlow demo uses microphone permission for authorization flow testing.";
 				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "PermissionFlow demo uses screen recording permission for authorization flow testing.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -338,7 +340,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
 				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
 				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
@@ -349,6 +351,8 @@
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "PermissionFlow demo may open and guide System Settings for authorization.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "PermissionFlow demo uses camera permission for authorization flow testing.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "PermissionFlow demo uses calendar permission for authorization flow testing.";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "PermissionFlow demo uses calendar permission for authorization flow testing.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "PermissionFlow demo uses microphone permission for authorization flow testing.";
 				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "PermissionFlow demo uses screen recording permission for authorization flow testing.";
 				LD_RUNPATH_SEARCH_PATHS = (

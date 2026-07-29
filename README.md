@@ -144,13 +144,14 @@ Platform support:
 
 ## Supported Permission Panes
 
-`PermissionFlow` covers these privacy panes. Most use the floating drag-and-drop authorization workflow; `.microphone` uses the system microphone prompt instead.
+`PermissionFlow` covers these privacy panes. Most use the floating drag-and-drop authorization workflow; `.microphone` and `.calendars` use the system permission prompt and only open System Settings (no floating drag panel).
 
 - `.accessibility`: Opens `Privacy & Security > Accessibility`. ✅ **Status Detection Supported**
 - `.fullDiskAccess`: Opens `Privacy & Security > Full Disk Access`. ✅ **Status Detection Supported**
 - `.inputMonitoring`: Opens `Privacy & Security > Input Monitoring`. ✅ **Status Detection Supported**
 - `.screenRecording`: Opens `Privacy & Security > Screen Recording`. ✅ **Status Detection Supported**
-- `.microphone`: Requests microphone authorization and opens `Privacy & Security > Microphone` when settings access is needed. ✅ **Status Detection Supported**
+- `.microphone`: Requests microphone authorization and opens `Privacy & Security > Microphone` when settings access is needed. ✅ **Status Detection Supported** (no floating panel)
+- `.calendars`: Requests calendar authorization and opens `Privacy & Security > Calendars`. ✅ **Status Detection Supported** (no floating panel; host `Info.plist` required)
 - `.bluetooth`: Opens `Privacy & Security > Bluetooth`. ✅ **Supports status detection**
 - `.mediaAppleMusic`: Opens `Privacy & Security > Media & Apple Music`. ✅ **Supports status detection**
 - `.appManagement`: Opens `Privacy & Security > App Management`. ⚠️ Status detection not available
@@ -159,7 +160,7 @@ Platform support:
 **Permission Status Display**: For supported permissions, `PermissionFlowButton` automatically displays the current authorization status:
 - ✅ **Granted**: Green checkmark icon with "Granted" text
 - ➡️ **Not Granted**: Blue arrow icon with "Grant" text  
-- Built into `PermissionFlow`: `.accessibility`, `.fullDiskAccess`, `.microphone`
+- Built into `PermissionFlow`: `.accessibility`, `.fullDiskAccess`, `.microphone`, `.calendars`
 - Available through optional status extensions: `.bluetooth`, `.inputMonitoring`, `.mediaAppleMusic`, `.screenRecording`
 - 🔄 **Checking**: Clock icon with "Checking..." text
 - ❓ **Unknown**: Blue arrow icon with "Open" text (for unsupported detection)
@@ -184,6 +185,41 @@ For sandboxed macOS apps, turn on `Audio Input`, or add:
 ```xml
 <key>com.apple.security.device.audio-input</key>
 <true/>
+```
+
+### Calendars
+
+Use this when requesting `.calendars` or calling EventKit calendar authorization APIs. After the host declares the usage description **and** the app successfully requests access once, the app appears in **Privacy & Security > Calendars**. This pane does **not** support drag-to-list authorization—`PermissionFlow` only opens the settings page.
+
+```xml
+<!-- Required on older macOS / as a compatibility key -->
+<key>NSCalendarsUsageDescription</key>
+<string>This app needs calendar access to manage events.</string>
+
+<!-- Required for full calendar access on newer macOS (macOS 14+) -->
+<key>NSCalendarsFullAccessUsageDescription</key>
+<string>This app needs full calendar access to read and manage events.</string>
+```
+
+If the host enables **App Sandbox**, also grant Calendars access:
+
+- Xcode: **Signing & Capabilities > App Sandbox > App Data > Calendars**
+- Or entitlement:
+
+```xml
+<key>com.apple.security.personal-information.calendars</key>
+<true/>
+```
+
+Without this sandbox entitlement, `requestFullAccessToEvents` will not register the app with TCC and it will **not** appear in the Calendars list.
+
+Status is read with EventKit. For a full manual UI example that does **not** use `PermissionFlowButton`, see [Manual Calendars authorization](#manual-calendars-authorization).
+
+```swift
+let provider = CalendarPermissionStatusProvider()
+let state = provider.authorizationState() // .granted when EKAuthorizationStatus.fullAccess
+// Equivalent check:
+// EKEventStore.authorizationStatus(for: .event) == .fullAccess
 ```
 
 ### Camera
@@ -335,6 +371,7 @@ struct PermissionBadge: View {
 | `.accessibility` | ✅ |  |  |
 | `.fullDiskAccess` | ✅ |  |  |
 | `.microphone` | ✅ |  |  |
+| `.calendars` | ✅ |  |  |
 | `.bluetooth` |  | ✅ |  |
 | `.inputMonitoring` |  | ✅ |  |
 | `.mediaAppleMusic` |  | ✅ |  |
@@ -457,6 +494,106 @@ struct ManualPermissionButton: View {
         let mouse = NSEvent.mouseLocation
         return CGRect(x: mouse.x - 16, y: mouse.y - 16, width: 32, height: 32)
     }
+}
+```
+
+### Manual Calendars authorization
+
+`.calendars` does **not** use the floating drag panel. You can handle it fully without `PermissionFlowButton`: request access with EventKit (via `CalendarPermissionStatusProvider`), then open the Calendars settings page.
+
+Host setup first (see [Calendars](#calendars)):
+
+1. `NSCalendarsUsageDescription` + `NSCalendarsFullAccessUsageDescription` in `Info.plist`
+2. App Sandbox → **Calendars** entitlement when sandbox is enabled
+
+```swift
+import AppKit
+import PermissionFlow
+import SystemSettingsKit
+import SwiftUI
+
+struct ManualCalendarsPermissionView: View {
+    @State private var authorizationState: PermissionAuthorizationState = .checking
+
+    private let didBecomeActive = NotificationCenter.default.publisher(
+        for: NSApplication.didBecomeActiveNotification
+    )
+
+    var body: some View {
+        Button {
+            requestCalendarAccess()
+        } label: {
+            let buttonState = PermissionFlowButtonState.make(from: authorizationState)
+            Label(title(for: authorizationState), systemImage: buttonState.systemImage)
+                .foregroundStyle(buttonState.isGranted ? .green : .primary)
+        }
+        .onAppear(perform: refreshStatus)
+        .onReceive(didBecomeActive) { _ in
+            refreshStatus()
+        }
+    }
+
+    private func refreshStatus() {
+        // Built-in registry entry for .calendars
+        authorizationState = PermissionStatusRegistry
+            .provider(for: .calendars)
+            .authorizationState()
+
+        // Or call the provider directly:
+        // authorizationState = CalendarPermissionStatusProvider().authorizationState()
+    }
+
+    private func requestCalendarAccess() {
+        authorizationState = .checking
+
+        CalendarPermissionStatusProvider().requestAuthorization { state in
+            Task { @MainActor in
+                authorizationState = state
+
+                // No floating panel — only open System Settings.
+                SystemSettings.open(.privacy(anchor: .privacyCalendars))
+
+                // Equivalent:
+                // PermissionFlow.makeController().authorize(pane: .calendars)
+            }
+        }
+    }
+
+    private func title(for state: PermissionAuthorizationState) -> String {
+        switch state {
+        case .granted:
+            "Granted"
+        case .notGranted:
+            "Request Calendars"
+        case .unknown:
+            "Open Calendars Settings"
+        case .checking:
+            "Checking..."
+        }
+    }
+}
+```
+
+Minimal non-UI version:
+
+```swift
+import PermissionFlow
+import SystemSettingsKit
+
+func openCalendarsPermission() {
+    CalendarPermissionStatusProvider().requestAuthorization { _ in
+        // After the system prompt (if needed), open settings so the user can
+        // change Full Access / toggle the app.
+        DispatchQueue.main.async {
+            SystemSettings.open(.privacy(anchor: .privacyCalendars))
+        }
+    }
+}
+
+func isCalendarsGranted() -> Bool {
+    CalendarPermissionStatusProvider().hasFullAccess()
+    // Same as:
+    // PermissionStatusRegistry.provider(for: .calendars).authorizationState() == .granted
 }
 ```
 
@@ -751,6 +888,7 @@ The existing `PermissionFlowPane` type continues to handle the privacy pages use
 - `.inputMonitoring`: Opens `Privacy & Security > Input Monitoring`.
 - `.mediaAppleMusic`: Opens `Privacy & Security > Media & Apple Music`.
 - `.microphone`: Requests microphone authorization and opens `Privacy & Security > Microphone` when settings access is needed.
+- `.calendars`: Requests calendar authorization and opens `Privacy & Security > Calendars` (no floating drag panel).
 - `.screenRecording`: Opens `Privacy & Security > Screen Recording`.
 
 Available typed privacy anchors and their destinations:

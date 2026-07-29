@@ -17,6 +17,7 @@ public enum PermissionStatusRegistry {
     private static let lock = NSLock()
     private static var registeredProviders: [PermissionFlowPane: any PermissionStatusProviding] = [
         .accessibility: AccessibilityPermissionStatusProvider(),
+        .calendars: CalendarPermissionStatusProvider(),
         .fullDiskAccess: FullDiskAccessPermissionStatusProvider(),
         .microphone: MicrophonePermissionStatusProvider(),
     ]
