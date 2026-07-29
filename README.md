@@ -564,6 +564,22 @@ Main entry points:
 - `resetDroppedApps()`
 - `registerDroppedApp(_:)`
 
+### `PermissionFlowResources`
+
+Expose internal bundled resources externally via `Bundle.module`.
+For host apps to access localized strings or other assets bundled within PermissionFlow.
+
+```swift
+import PermissionFlow
+
+let bundle = PermissionFlowResources.bundle
+let title = bundle.localizedString(
+    forKey: "some.key",
+    value: "default text",
+    table: nil
+)
+```
+
 ### `SystemSettings.open`
 
 Open any System Settings page directly from a pane identifier and optional anchor:
