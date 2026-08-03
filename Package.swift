@@ -28,6 +28,10 @@ let package = Package(
             targets: ["PermissionFlowBluetoothStatus"]
         ),
         .library(
+            name: "PermissionFlowCameraStatus",
+            targets: ["PermissionFlowCameraStatus"]
+        ),
+        .library(
             name: "PermissionFlowMediaStatus",
             targets: ["PermissionFlowMediaStatus"]
         ),
@@ -66,6 +70,11 @@ let package = Package(
             path: "Sources/PermissionFlowBluetoothStatus"
         ),
         .target(
+            name: "PermissionFlowCameraStatus",
+            dependencies: ["PermissionFlow"],
+            path: "Sources/PermissionFlowCameraStatus"
+        ),
+        .target(
             name: "PermissionFlowMediaStatus",
             dependencies: ["PermissionFlow"],
             path: "Sources/PermissionFlowMediaStatus"
@@ -84,6 +93,7 @@ let package = Package(
             name: "PermissionFlowExtendedStatus",
             dependencies: [
                 "PermissionFlowBluetoothStatus",
+                "PermissionFlowCameraStatus",
                 "PermissionFlowMediaStatus",
                 "PermissionFlowInputMonitoringStatus",
                 "PermissionFlowScreenRecordingStatus"

@@ -5,6 +5,7 @@
 "permission_flow.pane.accessibility" = "輔助使用";
 "permission_flow.pane.bluetooth" = "藍牙";
 "permission_flow.pane.calendars" = "行事曆";
+"permission_flow.pane.camera" = "相機";
 "permission_flow.pane.reminders" = "提醒事項";
 "permission_flow.pane.developer_tools" = "開發者工具";
 "permission_flow.pane.full_disk_access" = "完整磁碟存取";

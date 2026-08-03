@@ -90,8 +90,9 @@ This package now exposes these library products:
 - `PermissionFlow`: floating authorization guidance for supported privacy panes on macOS
 - `SystemSettingsKit`: reusable deeplink API for arbitrary System Settings pages
 - `PermissionFlowStatusStore`: injectable SwiftUI environment status store for reading permission state from any view
-- `PermissionFlowExtendedStatus`: one-stop optional status detection for `.bluetooth`, `.inputMonitoring`, `.mediaAppleMusic`, and `.screenRecording`
+- `PermissionFlowExtendedStatus`: one-stop optional status detection for `.bluetooth`, `.camera`, `.inputMonitoring`, `.mediaAppleMusic`, and `.screenRecording`
 - `PermissionFlowBluetoothStatus`: optional status detection for `.bluetooth`
+- `PermissionFlowCameraStatus`: optional status detection for `.camera`
 - `PermissionFlowMediaStatus`: optional status detection for `.mediaAppleMusic`
 - `PermissionFlowInputMonitoringStatus`: optional status detection for `.inputMonitoring`
 - `PermissionFlowScreenRecordingStatus`: optional status detection for `.screenRecording`
@@ -108,7 +109,7 @@ Then add the product you need to your target:
 )
 ```
 
-If you want status detection for `.bluetooth`, `.inputMonitoring`, `.mediaAppleMusic`, and `.screenRecording`, add the optional extension product as well:
+If you want status detection for `.bluetooth`, `.camera`, `.inputMonitoring`, `.mediaAppleMusic`, and `.screenRecording`, add the optional extension product as well:
 
 ```swift
 .target(
@@ -124,6 +125,7 @@ You can also depend on only the specific extension products you need:
 
 ```swift
 .product(name: "PermissionFlowBluetoothStatus", package: "PermissionFlow")
+.product(name: "PermissionFlowCameraStatus", package: "PermissionFlow")
 .product(name: "PermissionFlowMediaStatus", package: "PermissionFlow")
 .product(name: "PermissionFlowInputMonitoringStatus", package: "PermissionFlow")
 .product(name: "PermissionFlowScreenRecordingStatus", package: "PermissionFlow")
@@ -132,7 +134,7 @@ You can also depend on only the specific extension products you need:
 Why this split matters:
 
 - Apps that only use `PermissionFlow` keep the original core integration and do not need to link optional status-detection modules by default.
-- This reduces unnecessary compile-time and link-time dependencies such as `CoreBluetooth`, `MusicKit`, and `Carbon` when those permission states are not needed.
+- This reduces unnecessary compile-time and link-time dependencies such as `CoreBluetooth`, `AVFoundation` (camera status), `MusicKit`, and `Carbon` when those permission states are not needed.
 - In practice, this usually keeps the final app product cleaner and can reduce the amount of optional code that ends up linked into your binary.
 
 Platform support:
@@ -144,12 +146,13 @@ Platform support:
 
 ## Supported Permission Panes
 
-`PermissionFlow` covers these privacy panes. Most use the floating drag-and-drop authorization workflow; `.microphone`, `.calendars`, and `.reminders` use the system permission prompt and only open System Settings (no floating drag panel).
+`PermissionFlow` covers these privacy panes. Most use the floating drag-and-drop authorization workflow; `.camera`, `.microphone`, `.calendars`, and `.reminders` use the system permission prompt and only open System Settings (no floating drag panel).
 
 - `.accessibility`: Opens `Privacy & Security > Accessibility`. ✅ **Status Detection Supported**
 - `.fullDiskAccess`: Opens `Privacy & Security > Full Disk Access`. ✅ **Status Detection Supported**
 - `.inputMonitoring`: Opens `Privacy & Security > Input Monitoring`. ✅ **Status Detection Supported**
 - `.screenRecording`: Opens `Privacy & Security > Screen Recording`. ✅ **Status Detection Supported**
+- `.camera`: Requests camera authorization and opens `Privacy & Security > Camera` when settings access is needed. ✅ **Supports status detection** (no floating panel; via `PermissionFlowCameraStatus`)
 - `.microphone`: Requests microphone authorization and opens `Privacy & Security > Microphone` when settings access is needed. ✅ **Status Detection Supported** (no floating panel)
 - `.calendars`: Requests calendar authorization and opens `Privacy & Security > Calendars`. ✅ **Status Detection Supported** (no floating panel; host `Info.plist` required)
 - `.reminders`: Requests reminders authorization and opens `Privacy & Security > Reminders`. ✅ **Status Detection Supported** (no floating panel; host `Info.plist` required)
@@ -162,7 +165,7 @@ Platform support:
 - ✅ **Granted**: Green checkmark icon with "Granted" text
 - ➡️ **Not Granted**: Blue arrow icon with "Grant" text  
 - Built into `PermissionFlow`: `.accessibility`, `.fullDiskAccess`, `.microphone`, `.calendars`, `.reminders`
-- Available through optional status extensions: `.bluetooth`, `.inputMonitoring`, `.mediaAppleMusic`, `.screenRecording`
+- Available through optional status extensions: `.bluetooth`, `.camera`, `.inputMonitoring`, `.mediaAppleMusic`, `.screenRecording`
 - 🔄 **Checking**: Clock icon with "Checking..." text
 - ❓ **Unknown**: Blue arrow icon with "Open" text (for unsupported detection)
 
@@ -254,7 +257,7 @@ let state = provider.authorizationState() // .granted when EKAuthorizationStatus
 
 ### Camera
 
-Use this when requesting camera access.
+Use this when requesting `.camera` or calling Apple's camera authorization APIs.
 
 ```xml
 <key>NSCameraUsageDescription</key>
@@ -267,6 +270,23 @@ For sandboxed macOS apps, turn on `Camera`, or add:
 <key>com.apple.security.device.camera</key>
 <true/>
 ```
+
+Status is read with AVFoundation (`AVCaptureDevice.authorizationStatus(for: .video)`) via the optional `PermissionFlowCameraStatus` product. This pane does **not** support drag-to-list authorization—`PermissionFlow` only opens the settings page after the system prompt when needed.
+
+```swift
+import PermissionFlowCameraStatus
+
+// One-time registration (e.g. in App.init)
+PermissionFlowCameraStatus.register()
+
+let provider = CameraPermissionStatusProvider()
+let state = provider.authorizationState()
+provider.requestAuthorization { state in
+    // ...
+}
+```
+
+Or register all optional providers at once with `PermissionFlowExtendedStatus.register()`.
 
 ### Apple Events
 
@@ -404,6 +424,7 @@ struct PermissionBadge: View {
 | `.calendars` | ✅ |  |  |
 | `.reminders` | ✅ |  |  |
 | `.bluetooth` |  | ✅ |  |
+| `.camera` |  | ✅ |  |
 | `.inputMonitoring` |  | ✅ |  |
 | `.mediaAppleMusic` |  | ✅ |  |
 | `.screenRecording` |  | ✅ |  |
@@ -412,7 +433,7 @@ struct PermissionBadge: View {
 
 For panes that are not reliably detectable, `state(for:)` usually returns `.unknown`.
 
-Note: `PermissionFlowStatusStore` is only the state container. Optional panes such as `.inputMonitoring`, `.screenRecording`, `.bluetooth`, and `.mediaAppleMusic` still need their status providers registered first. In other words, `register()` and `PermissionFlowStatusStore` are two separate steps:
+Note: `PermissionFlowStatusStore` is only the state container. Optional panes such as `.inputMonitoring`, `.screenRecording`, `.bluetooth`, `.camera`, and `.mediaAppleMusic` still need their status providers registered first. In other words, `register()` and `PermissionFlowStatusStore` are two separate steps:
 
 ```swift
 import PermissionFlowInputMonitoringStatus
@@ -1005,6 +1026,7 @@ The existing `PermissionFlowPane` type continues to handle the privacy pages use
 - `.fullDiskAccess`: Opens `Privacy & Security > Full Disk Access`.
 - `.inputMonitoring`: Opens `Privacy & Security > Input Monitoring`.
 - `.mediaAppleMusic`: Opens `Privacy & Security > Media & Apple Music`.
+- `.camera`: Requests camera authorization and opens `Privacy & Security > Camera` when settings access is needed (status via `PermissionFlowCameraStatus`).
 - `.microphone`: Requests microphone authorization and opens `Privacy & Security > Microphone` when settings access is needed.
 - `.calendars`: Requests calendar authorization and opens `Privacy & Security > Calendars` (no floating drag panel).
 - `.reminders`: Requests reminders authorization and opens `Privacy & Security > Reminders` (no floating drag panel).

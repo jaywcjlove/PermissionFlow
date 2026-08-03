@@ -1,6 +1,7 @@
 #if os(macOS)
 import Foundation
 import PermissionFlowBluetoothStatus
+import PermissionFlowCameraStatus
 import PermissionFlowInputMonitoringStatus
 import PermissionFlowMediaStatus
 import PermissionFlowScreenRecordingStatus
@@ -10,6 +11,7 @@ public enum PermissionFlowExtendedStatus {
     @MainActor
     public static func register() {
         PermissionFlowBluetoothStatus.register()
+        PermissionFlowCameraStatus.register()
         PermissionFlowInputMonitoringStatus.register()
         PermissionFlowMediaStatus.register()
         PermissionFlowScreenRecordingStatus.register()

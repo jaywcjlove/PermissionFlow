@@ -9,6 +9,7 @@ import SystemSettingsKit
 import SwiftUI
 #if os(macOS)
 import PermissionFlow
+import PermissionFlowCameraStatus
 #endif
 
 struct ContentView: View {
@@ -57,7 +58,7 @@ struct ContentView: View {
                 Text("Each button opens the corresponding system settings privacy page. Only permission pages that support drag-and-drop app addition will show the floating authorization window. It's recommended to drag in the current Example.app by default.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
-                Text("Permission pages like Automation, Camera, and Files & Folders that don't natively support drag-and-drop app addition will only open the settings interface without showing the floating window. Microphone, Calendars, and Reminders use the system authorization prompt (no floating drag panel).")
+                Text("Permission pages like Automation and Files & Folders that don't natively support drag-and-drop app addition will only open the settings interface without showing the floating window. Camera, Microphone, Calendars, and Reminders use the system authorization prompt (no floating drag panel).")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
 #else
@@ -106,6 +107,7 @@ struct ContentView: View {
                 PermissionFlowButton(title: "Full DiskAccess", pane: .fullDiskAccess)
                 PermissionFlowButton(title: "Input Monitoring", pane: .inputMonitoring)
                 PermissionFlowButton(title: "Media AppleMusic", pane: .mediaAppleMusic)
+                PermissionFlowButton(title: "Camera", pane: .camera)
                 PermissionFlowButton(title: "Microphone", pane: .microphone)
                 PermissionFlowButton(title: "Calendars", pane: .calendars)
                 PermissionFlowButton(title: "Reminders", pane: .reminders)
@@ -119,6 +121,7 @@ struct ContentView: View {
                 PermissionFlowButton(pane: .fullDiskAccess)
                 PermissionFlowButton(pane: .inputMonitoring)
                 PermissionFlowButton(pane: .mediaAppleMusic)
+                PermissionFlowButton(pane: .camera)
                 PermissionFlowButton(pane: .microphone)
                 PermissionFlowButton(pane: .calendars)
                 PermissionFlowButton(pane: .reminders)
@@ -206,8 +209,12 @@ struct ContentView: View {
                     settingsURLButton(title: "Calendar", subtitle: "Navigate to Privacy & Security > Calendar", symbolName: "calendar", tint: .red) {
                         SystemSettings.open(.privacy(anchor: .privacyCalendars))
                     }
-                    settingsURLButton(title: "Camera", subtitle: "Navigate to Privacy & Security > Camera", symbolName: "camera", tint: .pink) {
-                        SystemSettings.open(.privacy(anchor: .privacyCamera))
+                    settingsURLButton(title: "Camera", subtitle: "Request Camera permission and show Privacy & Security > Camera", symbolName: "camera", tint: .pink) {
+                        CameraPermissionStatusProvider().requestAuthorization { _ in
+                            Task { @MainActor in
+                                SystemSettings.open(.privacy(anchor: .privacyCamera))
+                            }
+                        }
                     }
                     settingsURLButton(title: "Contacts", subtitle: "Navigate to Privacy & Security > Contacts", symbolName: "person.crop.circle.badge.checkmark", tint: .blue) {
                         SystemSettings.open(.privacy(anchor: .privacyContacts))
@@ -604,6 +611,7 @@ struct ContentView: View {
                     sourceFrameInScreen: sourceFrame
                 )
             }
+            CameraPermissionCard()
             MicrophonePermissionCard()
             PermissionCard(
                 title: "Screen Recording",
@@ -745,6 +753,113 @@ struct ContentView: View {
 }
 
 #if os(macOS)
+private struct CameraPermissionCard: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var authorizationState: PermissionAuthorizationState = .checking
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                Image(systemName: "camera")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 32, height: 32)
+                    .background(Color.pink.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                    .foregroundStyle(.pink)
+                Spacer()
+                statusBadge
+            }
+            Text("Camera").font(.system(size: 18, weight: .semibold))
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Camera authorization example using the system privacy prompt.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    requestAuthorization()
+                } label: {
+                    Label(buttonTitle, systemImage: buttonState.systemImage)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.pink)
+                .controlSize(.small)
+                Text("Status: \(statusText)")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.black.opacity(0.045), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.05), radius: 14, y: 5)
+        .onAppear(perform: refreshAuthorizationStatus)
+        .onChange(of: scenePhase) { phase in
+            if phase == .active {
+                refreshAuthorizationStatus()
+            }
+        }
+    }
+
+    private var buttonState: PermissionFlowButtonState {
+        PermissionFlowButtonState.make(from: authorizationState)
+    }
+
+    private var buttonTitle: String {
+        switch authorizationState {
+        case .granted:
+            "Granted"
+        case .checking:
+            "Checking..."
+        case .notGranted, .unknown:
+            "Request Camera"
+        }
+    }
+
+    private var statusText: String {
+        switch authorizationState {
+        case .granted:
+            "Granted"
+        case .notGranted:
+            "Not Granted"
+        case .unknown:
+            "Unknown"
+        case .checking:
+            "Checking..."
+        }
+    }
+
+    private var statusBadge: some View {
+        Label(statusText, systemImage: buttonState.systemImage)
+            .font(.system(size: 10.5, weight: .medium))
+            .labelStyle(.titleAndIcon)
+            .foregroundStyle(buttonState.isGranted ? .green : .secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill((buttonState.isGranted ? Color.green : Color.secondary).opacity(0.12))
+            )
+    }
+
+    private func refreshAuthorizationStatus() {
+        authorizationState = CameraPermissionStatusProvider().authorizationState()
+    }
+
+    private func requestAuthorization() {
+        authorizationState = .checking
+        CameraPermissionStatusProvider().requestAuthorization { authorizationState in
+            Task { @MainActor in
+                self.authorizationState = authorizationState
+                SystemSettings.open(.privacy(anchor: .privacyCamera))
+            }
+        }
+    }
+}
+
 private struct MicrophonePermissionCard: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var authorizationState: PermissionAuthorizationState = .checking

@@ -5,6 +5,7 @@
 "permission_flow.pane.accessibility" = "تسهيلات الاستخدام";
 "permission_flow.pane.bluetooth" = "Bluetooth";
 "permission_flow.pane.calendars" = "التقويمات";
+"permission_flow.pane.camera" = "الكاميرا";
 "permission_flow.pane.reminders" = "التذكيرات";
 "permission_flow.pane.developer_tools" = "أدوات المطور";
 "permission_flow.pane.full_disk_access" = "الوصول الكامل إلى القرص";

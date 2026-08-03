@@ -89,8 +89,9 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 - `PermissionFlow`：用于支持悬浮授权引导的权限页
 - `SystemSettingsKit`：用于任意 `System Settings` 页面 deeplink 跳转
 - `PermissionFlowStatusStore`：提供可注入 SwiftUI 环境的权限状态 store，方便在任意视图读取状态
-- `PermissionFlowExtendedStatus`：为 `.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 提供一站式可选状态检测
+- `PermissionFlowExtendedStatus`：为 `.bluetooth`、`.camera`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 提供一站式可选状态检测
 - `PermissionFlowBluetoothStatus`：`.bluetooth` 的可选状态检测
+- `PermissionFlowCameraStatus`：`.camera` 的可选状态检测
 - `PermissionFlowMediaStatus`：`.mediaAppleMusic` 的可选状态检测
 - `PermissionFlowInputMonitoringStatus`：`.inputMonitoring` 的可选状态检测
 - `PermissionFlowScreenRecordingStatus`：`.screenRecording` 的可选状态检测
@@ -107,7 +108,7 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 )
 ```
 
-如果你希望 `.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 显示授权状态，还需要额外添加可选扩展 product：
+如果你希望 `.bluetooth`、`.camera`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 显示授权状态，还需要额外添加可选扩展 product：
 
 ```swift
 .target(
@@ -123,6 +124,7 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 
 ```swift
 .product(name: "PermissionFlowBluetoothStatus", package: "PermissionFlow")
+.product(name: "PermissionFlowCameraStatus", package: "PermissionFlow")
 .product(name: "PermissionFlowMediaStatus", package: "PermissionFlow")
 .product(name: "PermissionFlowInputMonitoringStatus", package: "PermissionFlow")
 .product(name: "PermissionFlowScreenRecordingStatus", package: "PermissionFlow")
@@ -131,7 +133,7 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 这样拆分的意义：
 
 - 只使用 `PermissionFlow` 核心能力的应用，安装方式保持原样，不会默认链接这些可选状态检测模块。
-- 当你不需要这些权限状态时，可以减少 `CoreBluetooth`、`MusicKit`、`Carbon` 等额外编译期和链接期依赖。
+- 当你不需要这些权限状态时，可以减少 `CoreBluetooth`、`AVFoundation`（摄像头状态）、`MusicKit`、`Carbon` 等额外编译期和链接期依赖。
 - 实际上这通常会让最终产物更干净，也更有利于避免把不需要的可选检测代码链接进二进制。
 
 平台支持：
@@ -143,12 +145,13 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 
 ## 支持的权限页面
 
-`PermissionFlow` 覆盖以下权限页。大多数权限使用悬浮框 + 拖拽授权流程；`.microphone`、`.calendars` 与 `.reminders` 使用系统授权弹窗，并只打开系统设置（不显示悬浮拖拽面板）。
+`PermissionFlow` 覆盖以下权限页。大多数权限使用悬浮框 + 拖拽授权流程；`.camera`、`.microphone`、`.calendars` 与 `.reminders` 使用系统授权弹窗，并只打开系统设置（不显示悬浮拖拽面板）。
 
 - `.accessibility`：打开 `隐私与安全性 > 辅助功能`。✅ **支持状态检测**
 - `.fullDiskAccess`：打开 `隐私与安全性 > 完全磁盘访问权限`。✅ **支持状态检测**
 - `.inputMonitoring`：打开 `隐私与安全性 > 输入监控`。✅ **支持状态检测**
 - `.screenRecording`：打开 `隐私与安全性 > 屏幕录制`。✅ **支持状态检测**
+- `.camera`：请求摄像头授权，并在需要时打开 `隐私与安全性 > 摄像头`。✅ **支持状态检测**（无悬浮面板；通过 `PermissionFlowCameraStatus`）
 - `.microphone`：请求麦克风授权，并在需要时打开 `隐私与安全性 > 麦克风`。✅ **支持状态检测**（无悬浮面板）
 - `.calendars`：请求日历授权，并打开 `隐私与安全性 > 日历`。✅ **支持状态检测**（无悬浮面板；宿主需配置 `Info.plist`）
 - `.reminders`：请求提醒事项授权，并打开 `隐私与安全性 > 提醒事项`。✅ **支持状态检测**（无悬浮面板；宿主需配置 `Info.plist`）
@@ -162,7 +165,7 @@ package 地址和安装入口与之前保持一致。现在变化的是 product 
 - ✅ **已授权**：绿色勾选图标，显示"已授权"文字
 - ➡️ **未授权**：蓝色箭头图标，显示"授权"文字
 - `PermissionFlow` 内置支持：`.accessibility`、`.fullDiskAccess`、`.microphone`、`.calendars`、`.reminders`
-- 可通过可选状态扩展启用：`.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording`
+- 可通过可选状态扩展启用：`.bluetooth`、`.camera`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording`
 - 🔄 **检查中**：时钟图标，显示"检查中..."文字
 - ❓ **未知**：蓝色箭头图标，显示"打开"文字（不支持检测时）
 
@@ -254,7 +257,7 @@ let state = provider.authorizationState() // 当 EKAuthorizationStatus.fullAcces
 
 ### Camera
 
-当你请求摄像头权限时配置：
+当你请求 `.camera` 或调用 Apple 的摄像头授权 API 时配置：
 
 ```xml
 <key>NSCameraUsageDescription</key>
@@ -267,6 +270,23 @@ let state = provider.authorizationState() // 当 EKAuthorizationStatus.fullAcces
 <key>com.apple.security.device.camera</key>
 <true/>
 ```
+
+状态通过可选 product `PermissionFlowCameraStatus` 读取（AVFoundation：`AVCaptureDevice.authorizationStatus(for: .video)`）。该权限页**不支持**拖拽到列表授权——`PermissionFlow` 在需要时弹出系统授权后，只会打开对应设置页。
+
+```swift
+import PermissionFlowCameraStatus
+
+// 一次性注册（例如在 App.init 中）
+PermissionFlowCameraStatus.register()
+
+let provider = CameraPermissionStatusProvider()
+let state = provider.authorizationState()
+provider.requestAuthorization { state in
+    // ...
+}
+```
+
+或使用 `PermissionFlowExtendedStatus.register()` 一次注册全部可选状态检测。
 
 ### Apple Events
 
@@ -404,6 +424,7 @@ struct PermissionBadge: View {
 | `.calendars` | ✅ |  |  |
 | `.reminders` | ✅ |  |  |
 | `.bluetooth` |  | ✅ |  |
+| `.camera` |  | ✅ |  |
 | `.inputMonitoring` |  | ✅ |  |
 | `.mediaAppleMusic` |  | ✅ |  |
 | `.screenRecording` |  | ✅ |  |
@@ -412,7 +433,7 @@ struct PermissionBadge: View {
 
 对于不可可靠检测的权限，`state(for:)` 通常会返回 `.unknown`。
 
-注意：`PermissionFlowStatusStore` 只是状态容器，`.inputMonitoring`、`.screenRecording`、`.bluetooth`、`.mediaAppleMusic` 这类可选权限仍然需要先注册对应状态检测 provider。也就是说 `register()` 和 `PermissionFlowStatusStore` 是两步：
+注意：`PermissionFlowStatusStore` 只是状态容器，`.inputMonitoring`、`.screenRecording`、`.bluetooth`、`.camera`、`.mediaAppleMusic` 这类可选权限仍然需要先注册对应状态检测 provider。也就是说 `register()` 和 `PermissionFlowStatusStore` 是两步：
 
 ```swift
 import PermissionFlowInputMonitoringStatus
@@ -999,6 +1020,7 @@ SystemSettings.open(.privacy(anchor: .security))
 - `.fullDiskAccess`：打开 `隐私与安全性 > Full Disk Access`。
 - `.inputMonitoring`：打开 `隐私与安全性 > Input Monitoring`。
 - `.mediaAppleMusic`：打开 `隐私与安全性 > Media & Apple Music`。✅ **支持状态检测**
+- `.camera`：请求摄像头授权，并在需要时打开 `隐私与安全性 > Camera`。✅ **支持状态检测**（`PermissionFlowCameraStatus`）
 - `.microphone`：请求麦克风授权，并在需要时打开 `隐私与安全性 > Microphone`。✅ **支持状态检测**
 - `.calendars`：请求日历授权，并打开 `隐私与安全性 > Calendars`（无悬浮拖拽面板）。✅ **支持状态检测**
 - `.reminders`：请求提醒事项授权，并打开 `隐私与安全性 > Reminders`（无悬浮拖拽面板）。✅ **支持状态检测**

@@ -15,6 +15,11 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
     /// Requires calendar usage description keys in the host `Info.plist`.
     /// Does not use the floating drag panel; opens System Settings only.
     case calendars
+    /// Camera permissions list.
+    ///
+    /// Requires `NSCameraUsageDescription` in the host `Info.plist`.
+    /// Does not use the floating drag panel; opens System Settings only.
+    case camera
     /// Developer Tools permissions list.
     case developerTools
     /// Full Disk Access permissions list.
@@ -40,6 +45,7 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
         case .accessibility: .privacyAccessibility
         case .bluetooth: .privacyBluetooth
         case .calendars: .privacyCalendars
+        case .camera: .privacyCamera
         case .developerTools: .privacyDevTools
         case .fullDiskAccess: .privacyAllFiles
         case .inputMonitoring: .privacyListenEvent
@@ -53,7 +59,7 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
     /// Whether this pane supports the app-list drag authorization panel.
     public var supportsFloatingAuthorizationPanel: Bool {
         switch self {
-        case .calendars, .microphone, .reminders:
+        case .calendars, .camera, .microphone, .reminders:
             false
         default:
             true
@@ -90,6 +96,12 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
             return PermissionFlowLocalizer.string(
                 "permission_flow.pane.calendars",
                 defaultValue: "Calendars",
+                localeIdentifier: localeIdentifier
+            )
+        case .camera:
+            return PermissionFlowLocalizer.string(
+                "permission_flow.pane.camera",
+                defaultValue: "Camera",
                 localeIdentifier: localeIdentifier
             )
         case .developerTools:

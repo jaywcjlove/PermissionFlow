@@ -5,6 +5,7 @@
 "permission_flow.pane.accessibility" = "Универсальный доступ";
 "permission_flow.pane.bluetooth" = "Bluetooth";
 "permission_flow.pane.calendars" = "Календари";
+"permission_flow.pane.camera" = "Камера";
 "permission_flow.pane.reminders" = "Напоминания";
 "permission_flow.pane.developer_tools" = "Инструменты разработчика";
 "permission_flow.pane.full_disk_access" = "Полный доступ к диску";

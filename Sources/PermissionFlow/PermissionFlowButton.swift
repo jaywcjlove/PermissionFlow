@@ -1,5 +1,6 @@
 #if os(macOS)
 import AppKit
+import AVFoundation
 import SwiftUI
 
 @available(macOS 13.0, *)
@@ -93,6 +94,8 @@ public struct PermissionFlowButton: View {
         controller.setLocaleIdentifier(locale.identifier)
 
         switch pane {
+        case .camera:
+            requestCameraAuthorization()
         case .microphone:
             requestMicrophoneAuthorization()
         case .calendars:
@@ -105,6 +108,33 @@ public struct PermissionFlowButton: View {
                 suggestedAppURLs: suggestedAppURLs,
                 sourceFrameInScreen: clickSourceFrameInScreen()
             )
+        }
+    }
+
+    private func requestCameraAuthorization() {
+        buttonState = PermissionFlowButtonState.make(from: .checking)
+        // Request via AVFoundation so core does not depend on PermissionFlowCameraStatus.
+        // Register PermissionFlowCameraStatus (or ExtendedStatus) for reliable status display.
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                Task { @MainActor in
+                    buttonState = PermissionFlowButtonState.make(
+                        from: granted ? .granted : .notGranted
+                    )
+                    // Opens System Settings only; no floating drag panel.
+                    controller.authorize(pane: .camera)
+                }
+            }
+        case .authorized:
+            buttonState = PermissionFlowButtonState.make(from: .granted)
+            controller.authorize(pane: .camera)
+        case .denied, .restricted:
+            buttonState = PermissionFlowButtonState.make(from: .notGranted)
+            controller.authorize(pane: .camera)
+        @unknown default:
+            buttonState = PermissionFlowButtonState.make(from: .unknown)
+            controller.authorize(pane: .camera)
         }
     }
 
