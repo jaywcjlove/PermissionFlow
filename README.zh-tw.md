@@ -49,14 +49,14 @@ PermissionFlow
 
 `PermissionFlow` 是一個針對 macOS 的權限引導函式庫：它會開啟目標 `System Settings` 隱私權限頁，並在支援拖曳授權的頁面上顯示一個跟隨系統設定視窗的懸浮面板，讓使用者可以直接把目前 `.app` 拖入權限列表。專案同時內建 `SystemSettingsKit`，用於以強型別方式 deeplink 到 `System Settings` 的頁面和子頁面。
 
-- `PermissionFlow`：僅支援 macOS 的懸浮授權引導庫
+- `PermissionFlow`：僅支援 macOS 的懸浮授權引導函式庫
 - `SystemSettingsKit`：用於跳轉系統設定頁面的強型別 API，支援 macOS，並提供部分 iOS 支援
 
 它會自動開啟對應的系統隱私頁；對於支援拖曳式授權的權限頁，還會顯示一個懸浮輔助視窗，跟隨 `System Settings` 視窗移動，並允許使用者直接把目前 `.app` 拖入授權列表。
 
 ## 功能特性
 
-- **即時權限狀態顯示**：按鈕自動顯示權限是否已授權，提供視覺回饋（已授權顯示綠色勾選，未授權顯示藍色箭頭）
+- **即時權限狀態顯示**：按鈕自動顯示權限是否已授權，提供視覺反饋（已授權顯示綠色勾選，未授權顯示藍色箭頭）
 - 自動開啟目標 `System Settings` 隱私權限頁
 - 懸浮視窗從點擊位置飛入到 `System Settings` 視窗附近
 - 懸浮視窗跟隨 `System Settings` 視窗移動
@@ -89,8 +89,9 @@ dependencies: [
 - `PermissionFlow`：用於支援懸浮授權引導的權限頁
 - `SystemSettingsKit`：用於任意 `System Settings` 頁面 deeplink 跳轉
 - `PermissionFlowStatusStore`：提供可注入 SwiftUI 環境的權限狀態 store，方便在任意檢視讀取狀態
-- `PermissionFlowExtendedStatus`：為 `.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 提供一站式可選狀態檢查
+- `PermissionFlowExtendedStatus`：為 `.bluetooth`、`.camera`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 提供一站式可選狀態檢查
 - `PermissionFlowBluetoothStatus`：`.bluetooth` 的可選狀態檢查
+- `PermissionFlowCameraStatus`：`.camera` 的可選狀態檢查
 - `PermissionFlowMediaStatus`：`.mediaAppleMusic` 的可選狀態檢查
 - `PermissionFlowInputMonitoringStatus`：`.inputMonitoring` 的可選狀態檢查
 - `PermissionFlowScreenRecordingStatus`：`.screenRecording` 的可選狀態檢查
@@ -107,7 +108,7 @@ dependencies: [
 )
 ```
 
-如果你希望 `.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 顯示授權狀態，還需要額外新增可選擴充功能 product：
+如果你希望 `.bluetooth`、`.camera`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording` 顯示授權狀態，還需要額外新增可選擴充功能 product：
 
 ```swift
 .target(
@@ -123,6 +124,7 @@ dependencies: [
 
 ```swift
 .product(name: "PermissionFlowBluetoothStatus", package: "PermissionFlow")
+.product(name: "PermissionFlowCameraStatus", package: "PermissionFlow")
 .product(name: "PermissionFlowMediaStatus", package: "PermissionFlow")
 .product(name: "PermissionFlowInputMonitoringStatus", package: "PermissionFlow")
 .product(name: "PermissionFlowScreenRecordingStatus", package: "PermissionFlow")
@@ -131,7 +133,7 @@ dependencies: [
 這樣拆分的意義：
 
 - 只使用 `PermissionFlow` 核心能力的應用，安裝方式保持原樣，不會預設連結這些可選狀態檢查模組。
-- 當你不需要這些權限狀態時，可以減少 `CoreBluetooth`、`MusicKit`、`Carbon` 等額外編譯期和連結期依賴。
+- 當你不需要這些權限狀態時，可以減少 `CoreBluetooth`、`AVFoundation`（攝影機狀態）、`MusicKit`、`Carbon` 等額外編譯期和連結期依賴。
 - 實際上這通常會讓最終產物更乾淨，也更有利於避免把不需要的可選檢查程式碼連結進二進位檔。
 
 平臺支援：
@@ -139,17 +141,20 @@ dependencies: [
 - `PermissionFlow`：`macOS 13+`
 - `SystemSettingsKit`：`macOS 13+`、`iOS 16+`
 
-其中 `SystemSettingsKit` 在 iOS 上是“部分支援”狀態。macOS 那套基於 pane identifier 和 anchor 的 deeplink API 仍然只在 macOS 暴露；iOS 側只提供 UIKit 公開允許的設定入口，例如目前應用的設定頁。
+其中 `SystemSettingsKit` 在 iOS 上是「部分支援」狀態。macOS 那套基於 pane identifier 和 anchor 的 deeplink API 仍然只在 macOS 暴露；iOS 側只提供 UIKit 公開允許的設定入口，例如目前應用的設定頁。
 
 ## 支援的權限頁面
 
-`PermissionFlow` 覆蓋以下權限頁。大多數權限使用懸浮框 + 拖曳授權流程；`.microphone` 使用系統麥克風授權彈窗。
+`PermissionFlow` 覆蓋以下權限頁。大多數權限使用懸浮框 + 拖曳授權流程；`.camera`、`.microphone`、`.calendars` 與 `.reminders` 使用系統授權彈窗，並只開啟系統設定（不顯示懸浮拖曳面板）。
 
 - `.accessibility`：開啟 `隱私與安全性 > 輔助功能`。✅ **支援狀態檢查**
 - `.fullDiskAccess`：開啟 `隱私與安全性 > 完全磁碟存取權限`。✅ **支援狀態檢查**
 - `.inputMonitoring`：開啟 `隱私與安全性 > 輸入監控`。✅ **支援狀態檢查**
 - `.screenRecording`：開啟 `隱私與安全性 > 螢幕錄製`。✅ **支援狀態檢查**
-- `.microphone`：請求麥克風授權，並在需要時開啟 `隱私與安全性 > 麥克風`。✅ **支援狀態檢查**
+- `.camera`：請求攝影機授權，並在需要時開啟 `隱私與安全性 > 攝影機`。✅ **支援狀態檢查**（無懸浮面板；透過 `PermissionFlowCameraStatus`）
+- `.microphone`：請求麥克風授權，並在需要時開啟 `隱私與安全性 > 麥克風`。✅ **支援狀態檢查**（無懸浮面板）
+- `.calendars`：請求日曆授權，並開啟 `隱私與安全性 > 日曆`。✅ **支援狀態檢查**（無懸浮面板；宿主需設定 `Info.plist`）
+- `.reminders`：請求提醒事項授權，並開啟 `隱私與安全性 > 提醒事項`。✅ **支援狀態檢查**（無懸浮面板；宿主需設定 `Info.plist`）
 - `.bluetooth`：開啟 `隱私與安全性 > 藍牙`。✅ **支援狀態檢查**
 - `.mediaAppleMusic`：開啟 `隱私與安全性 > 媒體與 Apple Music`。✅ **支援狀態檢查**
 - `.appManagement`：開啟 `隱私與安全性 > App 管理`。⚠️ 狀態檢查不可用
@@ -159,8 +164,8 @@ dependencies: [
 
 - ✅ **已授權**：綠色勾選圖示，顯示"已授權"文字
 - ➡️ **未授權**：藍色箭頭圖示，顯示"授權"文字
-- `PermissionFlow` 內建支援：`.accessibility`、`.fullDiskAccess`、`.microphone`
-- 可透過可選狀態擴充功能啟用：`.bluetooth`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording`
+- `PermissionFlow` 內建支援：`.accessibility`、`.fullDiskAccess`、`.microphone`、`.calendars`、`.reminders`
+- 可透過可選狀態擴充功能啟用：`.bluetooth`、`.camera`、`.inputMonitoring`、`.mediaAppleMusic`、`.screenRecording`
 - 🔄 **檢查中**：時鐘圖示，顯示"檢查中..."文字
 - ❓ **未知**：藍色箭頭圖示，顯示"開啟"文字（不支援檢查時）
 
@@ -186,9 +191,73 @@ dependencies: [
 <true/>
 ```
 
+### Calendars
+
+當你請求 `.calendars` 或呼叫 EventKit 日曆授權 API 時設定。宿主在 `Info.plist` 聲明用途描述，並在**成功完成一次存取請求**後，應用會出現在 **隱私與安全性 > 日曆** 列表中。該權限頁**不支援**拖曳到列表授權——`PermissionFlow` 只會開啟對應設定頁。
+
+```xml
+<!-- 舊版 macOS / 相容所需 -->
+<key>NSCalendarsUsageDescription</key>
+<string>此應用需要存取日曆以管理事件。</string>
+
+<!-- 新版 macOS（macOS 14+）完整日曆存取所需 -->
+<key>NSCalendarsFullAccessUsageDescription</key>
+<string>此應用需要完整日曆存取權限以讀取和管理事件。</string>
+```
+
+若宿主開啟了 **App Sandbox**，還必須開啟日曆存取：
+
+- Xcode：**Signing & Capabilities > App Sandbox > App Data > Calendars**
+- 或 entitlement：
+
+```xml
+<key>com.apple.security.personal-information.calendars</key>
+<true/>
+```
+
+缺少該沙盒權限時，`requestFullAccessToEvents` 無法在 TCC 中註冊應用，**設定列表裡不會出現該 App**。
+
+狀態透過 EventKit 讀取。完整的**不使用** `PermissionFlowButton` 的手動 UI 範例見 [手動 Calendars 授權](#手動-calendars-授權)。
+
+```swift
+let provider = CalendarPermissionStatusProvider()
+let state = provider.authorizationState() // 當 EKAuthorizationStatus.fullAccess 時為 .granted
+// 等價判斷：
+// EKEventStore.authorizationStatus(for: .event) == .fullAccess
+```
+
+### Reminders
+
+與 [Calendars](#calendars) 相同模式：系統彈窗 + 開啟系統設定（無懸浮拖曳面板）。狀態使用 EventKit 的 `EKEntityType.reminder`。
+
+```xml
+<key>NSRemindersUsageDescription</key>
+<string>此應用需要存取提醒事項以管理任務。</string>
+
+<!-- 新版 macOS（macOS 14+）完整提醒事項存取所需 -->
+<key>NSRemindersFullAccessUsageDescription</key>
+<string>此應用需要完整提醒事項存取權限以讀取和管理任務。</string>
+```
+
+若開啟 App Sandbox，需授予 EventKit 個人資料存取（macOS 上 EventKit 通常需要日曆沙盒權限）：
+
+```xml
+<key>com.apple.security.personal-information.calendars</key>
+<true/>
+```
+
+完整手動 UI 範例見 [手動 Reminders 授權](#手動-reminders-授權)。
+
+```swift
+let provider = RemindersPermissionStatusProvider()
+let state = provider.authorizationState() // 當 EKAuthorizationStatus.fullAccess 時為 .granted
+// 等價判斷：
+// EKEventStore.authorizationStatus(for: .reminder) == .fullAccess
+```
+
 ### Camera
 
-當你請求攝影機權限時設定：
+當你請求 `.camera` 或呼叫 Apple 的攝影機授權 API 時設定：
 
 ```xml
 <key>NSCameraUsageDescription</key>
@@ -202,9 +271,26 @@ dependencies: [
 <true/>
 ```
 
+狀態透過可選 product `PermissionFlowCameraStatus` 讀取（AVFoundation：`AVCaptureDevice.authorizationStatus(for: .video)`）。該權限頁**不支援**拖曳到列表授權——`PermissionFlow` 在需要時彈出系統授權後，只會開啟對應設定頁。
+
+```swift
+import PermissionFlowCameraStatus
+
+// 一次性註冊（例如在 App.init 中）
+PermissionFlowCameraStatus.register()
+
+let provider = CameraPermissionStatusProvider()
+let state = provider.authorizationState()
+provider.requestAuthorization { state in
+    // ...
+}
+```
+
+或使用 `PermissionFlowExtendedStatus.register()` 一次註冊全部可選狀態檢查。
+
 ### Apple Events
 
-當你的 App 傳送 Apple Events，例如自動化或控制另一個 App 時設定：
+當你的 App 發送 Apple Events，例如自動化或控制另一個 App 時設定：
 
 ```xml
 <key>NSAppleEventsUsageDescription</key>
@@ -335,7 +421,10 @@ struct PermissionBadge: View {
 | `.accessibility` | ✅ |  |  |
 | `.fullDiskAccess` | ✅ |  |  |
 | `.microphone` | ✅ |  |  |
+| `.calendars` | ✅ |  |  |
+| `.reminders` | ✅ |  |  |
 | `.bluetooth` |  | ✅ |  |
+| `.camera` |  | ✅ |  |
 | `.inputMonitoring` |  | ✅ |  |
 | `.mediaAppleMusic` |  | ✅ |  |
 | `.screenRecording` |  | ✅ |  |
@@ -344,7 +433,7 @@ struct PermissionBadge: View {
 
 對於不可可靠檢查的權限，`state(for:)` 通常會回傳 `.unknown`。
 
-注意：`PermissionFlowStatusStore` 只是狀態容器，`.inputMonitoring`、`.screenRecording`、`.bluetooth`、`.mediaAppleMusic` 這類可選權限仍然需要先註冊對應狀態檢查 provider。也就是說 `register()` 和 `PermissionFlowStatusStore` 是兩步：
+注意：`PermissionFlowStatusStore` 只是狀態容器，`.inputMonitoring`、`.screenRecording`、`.bluetooth`、`.camera`、`.mediaAppleMusic` 這類可選權限仍然需要先註冊對應狀態檢查 provider。也就是說 `register()` 和 `PermissionFlowStatusStore` 是兩步：
 
 ```swift
 import PermissionFlowInputMonitoringStatus
@@ -401,6 +490,7 @@ struct MyApp: App {
 ### 手動控制狀態顯示
 
 ```swift
+import AppKit
 import PermissionFlow
 import SwiftUI
 
@@ -411,7 +501,7 @@ struct ManualPermissionButton: View {
     let didBecomeActive = NotificationCenter.default.publisher(
         for: NSApplication.didBecomeActiveNotification
     )
-
+    
     var body: some View {
         Button {
             controller.authorize(
@@ -459,6 +549,192 @@ struct ManualPermissionButton: View {
 }
 ```
 
+### 手動 Calendars 授權
+
+`.calendars` **不會**顯示懸浮拖曳面板。你可以完全不用 `PermissionFlowButton`：用 `CalendarPermissionStatusProvider` 請求系統日曆授權，再開啟「隱私與安全性 > 日曆」設定頁。
+
+先完成宿主設定（見 [Calendars](#calendars)）：
+
+1. `Info.plist` 中設定 `NSCalendarsUsageDescription` 與 `NSCalendarsFullAccessUsageDescription`
+2. 若開啟 App Sandbox，需開啟 **Calendars** 權限
+
+```swift
+import AppKit
+import PermissionFlow
+import SystemSettingsKit
+import SwiftUI
+
+struct ManualCalendarsPermissionView: View {
+    @State private var authorizationState: PermissionAuthorizationState = .checking
+
+    private let didBecomeActive = NotificationCenter.default.publisher(
+        for: NSApplication.didBecomeActiveNotification
+    )
+
+    var body: some View {
+        Button {
+            requestCalendarAccess()
+        } label: {
+            let buttonState = PermissionFlowButtonState.make(from: authorizationState)
+            Label(title(for: authorizationState), systemImage: buttonState.systemImage)
+                .foregroundStyle(buttonState.isGranted ? .green : .primary)
+        }
+        .onAppear(perform: refreshStatus)
+        .onReceive(didBecomeActive) { _ in
+            refreshStatus()
+        }
+    }
+
+    private func refreshStatus() {
+        // 內建的 .calendars 狀態 provider
+        authorizationState = PermissionStatusRegistry
+            .provider(for: .calendars)
+            .authorizationState()
+
+        // 或直接使用：
+        // authorizationState = CalendarPermissionStatusProvider().authorizationState()
+    }
+
+    private func requestCalendarAccess() {
+        authorizationState = .checking
+
+        CalendarPermissionStatusProvider().requestAuthorization { state in
+            Task { @MainActor in
+                authorizationState = state
+
+                // 無懸浮面板，只開啟系統設定
+                SystemSettings.open(.privacy(anchor: .privacyCalendars))
+
+                // 等價寫法：
+                // PermissionFlow.makeController().authorize(pane: .calendars)
+            }
+        }
+    }
+
+    private func title(for state: PermissionAuthorizationState) -> String {
+        switch state {
+        case .granted:
+            "已授權"
+        case .notGranted:
+            "請求日曆權限"
+        case .unknown:
+            "開啟日曆設定"
+        case .checking:
+            "檢查中..."
+        }
+    }
+}
+```
+
+無 UI 的最小用法：
+
+```swift
+import PermissionFlow
+import SystemSettingsKit
+
+func openCalendarsPermission() {
+    CalendarPermissionStatusProvider().requestAuthorization { _ in
+        // 系統彈窗結束後開啟設定，方便使用者切換 Full Access / 開關
+        DispatchQueue.main.async {
+            SystemSettings.open(.privacy(anchor: .privacyCalendars))
+        }
+    }
+}
+
+func isCalendarsGranted() -> Bool {
+    CalendarPermissionStatusProvider().hasFullAccess()
+    // 等價於：
+    // PermissionStatusRegistry.provider(for: .calendars).authorizationState() == .granted
+}
+```
+
+### 手動 Reminders 授權
+
+與 Calendars 相同流程，使用 `RemindersPermissionStatusProvider` 和提醒事項設定頁。先完成宿主設定（見 [Reminders](#reminders)）。
+
+```swift
+import AppKit
+import PermissionFlow
+import SystemSettingsKit
+import SwiftUI
+
+struct ManualRemindersPermissionView: View {
+    @State private var authorizationState: PermissionAuthorizationState = .checking
+
+    private let didBecomeActive = NotificationCenter.default.publisher(
+        for: NSApplication.didBecomeActiveNotification
+    )
+
+    var body: some View {
+        Button {
+            requestRemindersAccess()
+        } label: {
+            let buttonState = PermissionFlowButtonState.make(from: authorizationState)
+            Label(title(for: authorizationState), systemImage: buttonState.systemImage)
+                .foregroundStyle(buttonState.isGranted ? .green : .primary)
+        }
+        .onAppear(perform: refreshStatus)
+        .onReceive(didBecomeActive) { _ in
+            refreshStatus()
+        }
+    }
+
+    private func refreshStatus() {
+        authorizationState = PermissionStatusRegistry
+            .provider(for: .reminders)
+            .authorizationState()
+
+        // 或：
+        // authorizationState = RemindersPermissionStatusProvider().authorizationState()
+    }
+
+    private func requestRemindersAccess() {
+        authorizationState = .checking
+
+        RemindersPermissionStatusProvider().requestAuthorization { state in
+            Task { @MainActor in
+                authorizationState = state
+                SystemSettings.open(.privacy(anchor: .privacyReminders))
+                // 等價寫法：
+                // PermissionFlow.makeController().authorize(pane: .reminders)
+            }
+        }
+    }
+
+    private func title(for state: PermissionAuthorizationState) -> String {
+        switch state {
+        case .granted:
+            "已授權"
+        case .notGranted:
+            "請求提醒事項權限"
+        case .unknown:
+            "開啟提醒事項設定"
+        case .checking:
+            "檢查中..."
+        }
+    }
+}
+```
+
+無 UI 的最小用法：
+
+```swift
+import PermissionFlow
+import SystemSettingsKit
+
+func openRemindersPermission() {
+    RemindersPermissionStatusProvider().requestAuthorization { _ in
+        DispatchQueue.main.async {
+            SystemSettings.open(.privacy(anchor: .privacyReminders))
+        }
+    }
+}
+
+func isRemindersGranted() -> Bool {
+    RemindersPermissionStatusProvider().hasFullAccess()
+}
+```
+
 ### 手動使用 Controller
 
 如果你希望自己控制觸發時機，可以直接使用 `PermissionFlowController`：
@@ -472,7 +748,10 @@ final class PermissionViewModel: ObservableObject {
     private let controller = PermissionFlow.makeController()
 
     func requestFullDiskAccess() {
-        controller.authorize(pane: .fullDiskAccess)
+        controller.authorize(
+            pane: .fullDiskAccess,
+            suggestedAppURLs: [Bundle.main.bundleURL]
+        )
     }
 }
 ```
@@ -588,7 +867,7 @@ PermissionFlowButton(
 
 ### `PermissionFlow.makeController`
 
-建立一個可複用的控制器：
+建立一個可復用的控制器：
 
 ```swift
 let controller = PermissionFlow.makeController(
@@ -615,7 +894,7 @@ let controller = PermissionFlow.makeController(
 
 為宿主 App 安全存取套件內資源 bundle（本地化字串等資源）。
 
-**不要**在宿主 UI 或執行時直接使用 SwiftPM 的 `Bundle.module`：當已安裝 `.app` 的資源佈局與編譯期假設不一致時，`Bundle.module` 可能斷言失敗（`EXC_BREAKPOINT`）。`PermissionFlowResources` 會搜尋常見打包路徑，且不會斷言崩潰。
+**不要**在宿主 UI 或執行時直接使用 SwiftPM 的 `Bundle.module`：當已安裝 `.app` 的資源布局與編譯期假設不一致時，`Bundle.module` 可能斷言失敗（`EXC_BREAKPOINT`）。`PermissionFlowResources` 會搜索常見打包路徑，且不會斷言崩潰。
 
 ```swift
 import PermissionFlow
@@ -679,7 +958,7 @@ SystemSettings.open(.displays(anchor: .resolutionSection))
 
 `SystemSettingsKit` 提供了一個輕量的通用 API，用於透過 `x-apple.systempreferences:` URL Scheme 跳轉任意 `System Settings` 頁面。
 
-這一部分規則和示例，參考自 [SystemSettings-URLs-macOS](https://github.com/jaywcjlove/SystemSettings-URLs-macOS/blob/main/README.md) 中整理的 pane identifier 和 deeplink 說明。
+這一部分規則和範例，參考自 [SystemSettings-URLs-macOS](https://github.com/jaywcjlove/SystemSettings-URLs-macOS/blob/main/README.md) 中整理的 pane identifier 和 deeplink 說明。
 
 ### URL 格式
 
@@ -727,7 +1006,7 @@ public struct SystemSettingsDestination {
 
 ### 隱私權限錨點
 
-對於“隱私與安全性”中的子頁面，可以這樣寫：
+對於「隱私與安全性」中的子頁面，可以這樣寫：
 
 ```swift
 SystemSettings.open(.privacy(anchor: .privacyAllFiles))
@@ -745,7 +1024,10 @@ SystemSettings.open(.privacy(anchor: .security))
 - `.fullDiskAccess`：開啟 `隱私與安全性 > Full Disk Access`。
 - `.inputMonitoring`：開啟 `隱私與安全性 > Input Monitoring`。
 - `.mediaAppleMusic`：開啟 `隱私與安全性 > Media & Apple Music`。✅ **支援狀態檢查**
+- `.camera`：請求攝影機授權，並在需要時開啟 `隱私與安全性 > Camera`。✅ **支援狀態檢查**（`PermissionFlowCameraStatus`）
 - `.microphone`：請求麥克風授權，並在需要時開啟 `隱私與安全性 > Microphone`。✅ **支援狀態檢查**
+- `.calendars`：請求日曆授權，並開啟 `隱私與安全性 > Calendars`（無懸浮拖曳面板）。✅ **支援狀態檢查**
+- `.reminders`：請求提醒事項授權，並開啟 `隱私與安全性 > Reminders`（無懸浮拖曳面板）。✅ **支援狀態檢查**
 - `.screenRecording`：開啟 `隱私與安全性 > Screen Recording`。
 
 目前內建的隱私與安全性強型別錨點，以及它們實際跳轉到的位置：
@@ -811,7 +1093,7 @@ SystemSettings.open(.displays(anchor: .nightShiftSection))
 
 ### 登入項子頁面錨點
 
-“登入項”頁面也支援強型別子頁面錨點：
+「登入項」頁面也支援強型別子頁面錨點：
 
 ```swift
 SystemSettings.open(.loginItems)
@@ -836,7 +1118,7 @@ SystemSettings.open(.loginItems(extensionPointIdentifier: .shareServices))
 
 ### Wi-Fi 子頁面錨點
 
-“Wi-Fi”頁面也支援強型別子頁面錨點：
+「Wi-Fi」頁面也支援強型別子頁面錨點：
 
 ```swift
 SystemSettings.open(.wifi)
@@ -855,7 +1137,7 @@ SystemSettings.open(.wifi(anchor: .advanced))
 
 ### VPN 子頁面錨點
 
-“VPN”頁面也支援強型別子頁面錨點：
+「VPN」頁面也支援強型別子頁面錨點：
 
 ```swift
 SystemSettings.open(.vpn)
@@ -870,7 +1152,7 @@ SystemSettings.open(.vpn(anchor: .vpnOnDemand))
 
 ### 輔助功能子頁面錨點
 
-“輔助功能”頁面提供常用子頁面的強型別封裝，也保留 raw string 形式用於更細的控制元件級 anchor：
+「輔助功能」頁面提供常用子頁面的強型別封裝，也保留 raw string 形式用於更細的控制項級 anchor：
 
 ```swift
 SystemSettings.open(.accessibility)
@@ -882,7 +1164,7 @@ SystemSettings.open(.accessibility(anchor: "AX_ZOOM_MAX_FACTOR"))
 目前內建的常用輔助功能錨點：
 
 - `.display`：跳轉到 `輔助功能 > 顯示`
-- `.text`：跳轉到 `輔助功能 > 文字`
+- `.text`：跳轉到 `輔助功能 > 文本`
 - `.pointer`：跳轉到 `輔助功能 > 指標`
 - `.mouseAndTrackpad`：跳轉到 `輔助功能 > 滑鼠與觸控板`
 - `.headphones`：跳轉到 `輔助功能 > 耳機`
@@ -904,7 +1186,7 @@ SystemSettings.open(.accessibility(anchor: "AX_ZOOM_MAX_FACTOR"))
 - `.alternateMouseButtons`：跳轉到 `輔助功能 > 替代滑鼠按鈕`
 - `.headMouse`：跳轉到 `輔助功能 > 頭控指標`
 - `.mouseKeys`：跳轉到 `輔助功能 > 滑鼠鍵`
-- `.hoverText`：跳轉到 `輔助功能 > 懸停文字`
+- `.hoverText`：跳轉到 `輔助功能 > 懸停文本`
 - `.hoverTyping`：跳轉到 `輔助功能 > 懸停輸入`
 - `.liveSpeech`：跳轉到 `輔助功能 > 即時語音`
 - `.personalVoice`：跳轉到 `輔助功能 > 個人聲音`
