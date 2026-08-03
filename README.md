@@ -38,7 +38,7 @@
 </div>
 <hr>
 
-[中文](./README.zh.md) • [Installation](#installation) • [Localization](#localization) • [Public API](#public-api) • [System Settings URL Scheme](#system-settings-url-scheme)
+[简体中文](./README.zh.md) • [繁體中文](./README.zh-tw.md) • [Installation](#installation) • [Localization](#localization) • [Public API](#public-api) • [System Settings URL Scheme](#system-settings-url-scheme)
 
 <hr>
 
