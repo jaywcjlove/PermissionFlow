@@ -940,12 +940,20 @@ label.stringValue = name
 button.title = name
 ```
 
-If you look up strings yourself, `accessibilityName()` returns the matching localization key:
+If you look up strings yourself, `accessibilityName()` returns the matching localization key. Pass any name key to `localizedString(for:)` to resolve it from the package `.lproj` tables, or to `localizedStringResource(for:)` for SwiftUI:
 
 ```swift
 let key = PermissionFlowResources.accessibilityName()
 // macOS 27+: "permission_flow.pane.device_control_and_data_access"
 // earlier:   "permission_flow.pane.accessibility"
+
+let name = PermissionFlowResources.localizedString(
+    for: key,
+    localeIdentifier: "zh-Hans"
+)
+// "设备控制和数据访问" or "辅助功能"
+
+Text(PermissionFlowResources.localizedStringResource(for: key))
 ```
 
 ```swift
@@ -963,6 +971,12 @@ public enum PermissionFlowResources {
     public static func accessibilityNameResource(
         operatingSystemVersion: OperatingSystemVersion
     ) -> LocalizedStringResource
+    public static func localizedStringResource(for nameKey: String) -> LocalizedStringResource
+    public static func localizedString(
+        for nameKey: String,
+        defaultValue: String? = nil,
+        localeIdentifier: String? = nil
+    ) -> String
 }
 ```
 

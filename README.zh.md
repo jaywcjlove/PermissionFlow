@@ -934,12 +934,20 @@ label.stringValue = name
 button.title = name
 ```
 
-如果要自己查字符串，`accessibilityName()` 会返回对应的本地化 key：
+如果要自己查字符串，`accessibilityName()` 会返回对应的本地化 key。把任意 NameKey 传给 `localizedString(for:)` 即可从包内 `.lproj` 取出译文，或传给 `localizedStringResource(for:)` 给 SwiftUI 用：
 
 ```swift
 let key = PermissionFlowResources.accessibilityName()
 // macOS 27+： "permission_flow.pane.device_control_and_data_access"
 // 更早版本： "permission_flow.pane.accessibility"
+
+let name = PermissionFlowResources.localizedString(
+    for: key,
+    localeIdentifier: "zh-Hans"
+)
+// "设备控制和数据访问" 或 "辅助功能"
+
+Text(PermissionFlowResources.localizedStringResource(for: key))
 ```
 
 ```swift
@@ -957,6 +965,12 @@ public enum PermissionFlowResources {
     public static func accessibilityNameResource(
         operatingSystemVersion: OperatingSystemVersion
     ) -> LocalizedStringResource
+    public static func localizedStringResource(for nameKey: String) -> LocalizedStringResource
+    public static func localizedString(
+        for nameKey: String,
+        defaultValue: String? = nil,
+        localeIdentifier: String? = nil
+    ) -> String
 }
 ```
 

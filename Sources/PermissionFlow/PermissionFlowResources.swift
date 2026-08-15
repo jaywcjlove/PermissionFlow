@@ -64,13 +64,99 @@ public enum PermissionFlowResources {
     public static func accessibilityNameResource(
         operatingSystemVersion: OperatingSystemVersion
     ) -> LocalizedStringResource {
+        localizedStringResource(for: accessibilityName(operatingSystemVersion: operatingSystemVersion))
+    }
+
+    /// SwiftUI-ready resource for any packaged localization key.
+    ///
+    /// Pass a name key such as `accessibilityNameKey` or the result of
+    /// `accessibilityName()`. The resource is backed by the package bundle,
+    /// so SwiftUI follows the host app locale automatically.
+    ///
+    /// ```swift
+    /// Text(PermissionFlowResources.localizedStringResource(for: PermissionFlowResources.accessibilityNameKey))
+    /// ```
+    public static func localizedStringResource(for nameKey: String) -> LocalizedStringResource {
         LocalizedStringResource(
-            String.LocalizationValue(accessibilityName(operatingSystemVersion: operatingSystemVersion)),
+            String.LocalizationValue(nameKey),
             bundle: .atURL(bundle.bundleURL)
         )
     }
 
+    /// Resolves a packaged localization string for `nameKey`.
+    ///
+    /// Looks up the key in the package resource bundle's `.lproj` tables so
+    /// host apps get PermissionFlow translations without calling
+    /// `Bundle.module`. When `localeIdentifier` is `nil`, uses the preferred
+    /// languages / current locale. Falls back to `defaultValue`, then the
+    /// English package string, then `nameKey` itself.
+    ///
+    /// ```swift
+    /// let name = PermissionFlowResources.localizedString(
+    ///     for: PermissionFlowResources.accessibilityNameKey,
+    ///     localeIdentifier: "zh-Hans"
+    /// )
+    /// ```
+    public static func localizedString(
+        for nameKey: String,
+        defaultValue: String? = nil,
+        localeIdentifier: String? = nil
+    ) -> String {
+        guard let packageBundle else {
+            return defaultValue ?? nameKey
+        }
+
+        let fallback = defaultValue
+            ?? localizedBundle(for: "en", in: packageBundle)?
+                .localizedString(forKey: nameKey, value: nameKey, table: nil)
+            ?? nameKey
+
+        let resolvedLocaleIdentifier = localeIdentifier
+            ?? Locale.preferredLanguages.first
+            ?? Locale.current.identifier
+
+        if let localized = localizedBundle(for: resolvedLocaleIdentifier, in: packageBundle) {
+            return localized.localizedString(forKey: nameKey, value: fallback, table: nil)
+        }
+
+        return packageBundle.localizedString(forKey: nameKey, value: fallback, table: nil)
+    }
+
     private static let resolvedPackageBundle: Bundle? = findPackageResourceBundle()
+
+    /// Best matching `.lproj` bundle for `localeIdentifier` inside the
+    /// packaged resource. Returns `nil` when no localization folder matches.
+    private static func localizedBundle(for localeIdentifier: String?, in packageBundle: Bundle) -> Bundle? {
+        guard let localeIdentifier, localeIdentifier.isEmpty == false else {
+            return nil
+        }
+
+        let preferences = localizationPreferences(for: localeIdentifier)
+        guard let localization = Bundle.preferredLocalizations(
+            from: packageBundle.localizations,
+            forPreferences: preferences
+        ).first,
+        let path = packageBundle.path(forResource: localization, ofType: "lproj") else {
+            return nil
+        }
+
+        return Bundle(path: path)
+    }
+
+    private static func localizationPreferences(for localeIdentifier: String) -> [String] {
+        let normalizedIdentifier = localeIdentifier.replacingOccurrences(of: "_", with: "-")
+        let locale = Locale(identifier: normalizedIdentifier)
+
+        var preferences = [normalizedIdentifier]
+        if let identifier = locale.language.languageCode?.identifier {
+            if let script = locale.language.script?.identifier {
+                preferences.append("\(identifier)-\(script)")
+            }
+            preferences.append(identifier)
+        }
+
+        return Array(NSOrderedSet(array: preferences)) as? [String] ?? preferences
+    }
 
     private static func findPackageResourceBundle() -> Bundle? {
         let bundleFileName = "\(resourceBundleName).bundle"

@@ -72,6 +72,46 @@ func accessibilityPaneTitleFollowsSystemSettingsRename() {
 }
 
 @Test
+func localizedStringResolvesNameKeyFromPackageBundle() {
+    #expect(
+        PermissionFlowResources.localizedString(
+            for: PermissionFlowResources.accessibilityNameKey,
+            localeIdentifier: "en"
+        ) == "Accessibility"
+    )
+    #expect(
+        PermissionFlowResources.localizedString(
+            for: PermissionFlowResources.accessibilityNameKey,
+            localeIdentifier: "zh-Hans"
+        ) == "辅助功能"
+    )
+    #expect(
+        PermissionFlowResources.localizedString(
+            for: PermissionFlowResources.deviceControlAndDataAccessNameKey,
+            localeIdentifier: "zh-Hans"
+        ) == "设备控制和数据访问"
+    )
+    #expect(
+        PermissionFlowResources.localizedString(
+            for: PermissionFlowResources.deviceControlAndDataAccessNameKey,
+            localeIdentifier: "zh-Hant"
+        ) == "裝置控制和資料取用"
+    )
+    let currentNameKey = PermissionFlowResources.accessibilityName()
+    let currentName = PermissionFlowResources.localizedString(for: currentNameKey, localeIdentifier: "en")
+    #expect(currentName == "Accessibility" || currentName == "Device Control and Data Access")
+    #expect(
+        PermissionFlowResources.localizedStringResource(for: PermissionFlowResources.accessibilityNameKey).key
+            == PermissionFlowResources.accessibilityNameKey
+    )
+    #expect(
+        PermissionFlowResources.localizedStringResource(
+            for: PermissionFlowResources.deviceControlAndDataAccessNameKey
+        ).key == PermissionFlowResources.deviceControlAndDataAccessNameKey
+    )
+}
+
+@Test
 func typedDisplaysAnchorBuildsDeepLink() {
     #expect(
         SystemSettingsDestination.displays(anchor: .resolutionSection).url.absoluteString ==
