@@ -7,6 +7,10 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
     /// App Management permissions list.
     case appManagement
     /// Accessibility permissions list.
+    ///
+    /// On macOS 27 and later, System Settings labels this page
+    /// "Device Control and Data Access". The deeplink remains
+    /// `Privacy_Accessibility`.
     case accessibility
     /// Bluetooth permissions list.
     case bluetooth
@@ -71,8 +75,22 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
         SystemSettingsDestination.privacy(anchor: privacyAnchor).url
     }
 
+    /// Whether System Settings labels the Accessibility privacy page
+    /// "Device Control and Data Access".
+    ///
+    /// This rename landed in macOS 27. The settings URL and
+    /// `Privacy_Accessibility` anchor did not change.
+    static func usesDeviceControlAndDataAccessTitle(
+        operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
+    ) -> Bool {
+        operatingSystemVersion.majorVersion >= 27
+    }
+
     /// Returns the localized permission name for the requested locale.
-    func localizedTitle(localeIdentifier: String?) -> String {
+    func localizedTitle(
+        localeIdentifier: String?,
+        operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
+    ) -> String {
         switch self {
         case .appManagement:
             return PermissionFlowLocalizer.string(
@@ -81,6 +99,13 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
                 localeIdentifier: localeIdentifier
             )
         case .accessibility:
+            if Self.usesDeviceControlAndDataAccessTitle(operatingSystemVersion: operatingSystemVersion) {
+                return PermissionFlowLocalizer.string(
+                    "permission_flow.pane.device_control_and_data_access",
+                    defaultValue: "Device Control and Data Access",
+                    localeIdentifier: localeIdentifier
+                )
+            }
             return PermissionFlowLocalizer.string(
                 "permission_flow.pane.accessibility",
                 defaultValue: "Accessibility",

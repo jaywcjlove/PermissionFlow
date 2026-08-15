@@ -164,6 +164,10 @@ public enum PrivacySecurityAnchor: String, CaseIterable, Sendable {
     /// Opens Lockdown Mode settings.
     case lockdownMode = "LockdownMode"
     /// Opens Accessibility privacy permissions.
+    ///
+    /// The System Settings list label is "Accessibility" before macOS 27
+    /// and "Device Control and Data Access" on macOS 27 and later.
+    /// The `Privacy_Accessibility` anchor is unchanged.
     case privacyAccessibility = "Privacy_Accessibility"
     /// Opens Advertising privacy settings.
     case privacyAdvertising = "Privacy_Advertising"

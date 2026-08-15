@@ -9,6 +9,44 @@ func paneURLsUseSecuritySettingsDeepLink() {
         PermissionFlowPane.fullDiskAccess.settingsURL.absoluteString ==
         "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles"
     )
+    #expect(
+        PermissionFlowPane.accessibility.settingsURL.absoluteString ==
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility"
+    )
+}
+
+@Test
+func accessibilityPaneTitleFollowsSystemSettingsRename() {
+    let macOS26 = OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)
+    let macOS27 = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
+
+    #expect(PermissionFlowPane.usesDeviceControlAndDataAccessTitle(operatingSystemVersion: macOS26) == false)
+    #expect(PermissionFlowPane.usesDeviceControlAndDataAccessTitle(operatingSystemVersion: macOS27))
+
+    #expect(
+        PermissionFlowPane.accessibility.localizedTitle(
+            localeIdentifier: "en",
+            operatingSystemVersion: macOS26
+        ) == "Accessibility"
+    )
+    #expect(
+        PermissionFlowPane.accessibility.localizedTitle(
+            localeIdentifier: "en",
+            operatingSystemVersion: macOS27
+        ) == "Device Control and Data Access"
+    )
+    #expect(
+        PermissionFlowPane.accessibility.localizedTitle(
+            localeIdentifier: "zh-Hans",
+            operatingSystemVersion: macOS27
+        ) == "设备控制和数据访问"
+    )
+    #expect(
+        PermissionFlowPane.accessibility.localizedTitle(
+            localeIdentifier: "zh-Hant",
+            operatingSystemVersion: macOS27
+        ) == "裝置控制和資料取用"
+    )
 }
 
 @Test

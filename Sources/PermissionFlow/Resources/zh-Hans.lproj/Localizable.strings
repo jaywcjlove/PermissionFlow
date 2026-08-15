@@ -3,6 +3,7 @@
 "permission_flow.pane.permission" = "权限";
 "permission_flow.pane.app_management" = "App 管理";
 "permission_flow.pane.accessibility" = "辅助功能";
+"permission_flow.pane.device_control_and_data_access" = "设备控制和数据访问";
 "permission_flow.pane.bluetooth" = "蓝牙";
 "permission_flow.pane.calendars" = "日历";
 "permission_flow.pane.camera" = "摄像头";

@@ -3,6 +3,7 @@
 "permission_flow.pane.permission" = "Permiso";
 "permission_flow.pane.app_management" = "Gestión de apps";
 "permission_flow.pane.accessibility" = "Accesibilidad";
+"permission_flow.pane.device_control_and_data_access" = "Control de dispositivos y acceso a datos";
 "permission_flow.pane.bluetooth" = "Bluetooth";
 "permission_flow.pane.calendars" = "Calendarios";
 "permission_flow.pane.camera" = "Cámara";

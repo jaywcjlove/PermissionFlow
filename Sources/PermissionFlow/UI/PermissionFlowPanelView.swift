@@ -66,6 +66,7 @@ struct PermissionFlowPanelView: View {
 
     /// Builds a markdown-backed localized title such as:
     /// "Drag **Example** to the list above to allow **Accessibility**."
+    /// On macOS 27+, the permission name is "Device Control and Data Access".
     private var headerTitle: AttributedString {
         let localizedTemplate = PermissionFlowLocalizer.string(
             "permission_flow.panel.title",
