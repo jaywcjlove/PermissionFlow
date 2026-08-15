@@ -20,6 +20,20 @@ func accessibilityPaneTitleFollowsSystemSettingsRename() {
     let macOS26 = OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)
     let macOS27 = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
 
+    #expect(
+        PermissionFlowResources.accessibilityName(operatingSystemVersion: macOS26)
+            == PermissionFlowResources.accessibilityNameKey
+    )
+    #expect(
+        PermissionFlowResources.accessibilityName(operatingSystemVersion: macOS27)
+            == PermissionFlowResources.deviceControlAndDataAccessNameKey
+    )
+    #expect(PermissionFlowResources.accessibilityNameKey == "permission_flow.pane.accessibility")
+    #expect(
+        PermissionFlowResources.deviceControlAndDataAccessNameKey
+            == "permission_flow.pane.device_control_and_data_access"
+    )
+
     #expect(PermissionFlowPane.usesDeviceControlAndDataAccessTitle(operatingSystemVersion: macOS26) == false)
     #expect(PermissionFlowPane.usesDeviceControlAndDataAccessTitle(operatingSystemVersion: macOS27))
 
@@ -46,6 +60,24 @@ func accessibilityPaneTitleFollowsSystemSettingsRename() {
             localeIdentifier: "zh-Hant",
             operatingSystemVersion: macOS27
         ) == "裝置控制和資料取用"
+    )
+    #expect(
+        PermissionFlowResources.localizedAccessibilityName(
+            localeIdentifier: "en",
+            operatingSystemVersion: macOS26
+        ) == "Accessibility"
+    )
+    #expect(
+        PermissionFlowResources.localizedAccessibilityName(
+            localeIdentifier: "en",
+            operatingSystemVersion: macOS27
+        ) == "Device Control and Data Access"
+    )
+    #expect(
+        PermissionFlowResources.localizedAccessibilityName(
+            localeIdentifier: "zh-Hans",
+            operatingSystemVersion: macOS27
+        ) == "设备控制和数据访问"
     )
 }
 

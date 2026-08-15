@@ -917,11 +917,56 @@ let title = bundle.localizedString(
 )
 ```
 
+宿主介面要顯示輔助使用隱私頁名稱時，直接用本地化方法。macOS 27 起系統設定將此頁標為 **裝置控制和資料取用**（Device Control and Data Access）；更早版本仍是 **輔助使用**（Accessibility）。設定 URL 和 `Privacy_Accessibility` 錨點不變。
+
+```swift
+import PermissionFlow
+import SwiftUI
+
+// 最簡單：已本地化的顯示名稱
+Text(PermissionFlowResources.localizedAccessibilityName())
+
+// 跟隨 SwiftUI environment locale
+@Environment(\.locale) private var locale
+
+Text(
+    PermissionFlowResources.localizedAccessibilityName(
+        localeIdentifier: locale.identifier
+    )
+)
+```
+
+如果要自己查字串，`accessibilityName()` 會回傳對應的本地化 key：
+
+```swift
+let key = PermissionFlowResources.accessibilityName()
+// macOS 27+： "permission_flow.pane.device_control_and_data_access"
+// 更早版本： "permission_flow.pane.accessibility"
+
+let name = PermissionFlowResources.bundle.localizedString(
+    forKey: key,
+    value: "輔助使用",
+    table: nil
+)
+```
+
 ```swift
 public enum PermissionFlowResources {
     public static let resourceBundleName = "PermissionFlow_PermissionFlow"
     public static var packageBundle: Bundle? { get } // 找不到時為 nil
     public static var bundle: Bundle { get }         // packageBundle ?? .main
+
+    public static let accessibilityNameKey: String
+    public static let deviceControlAndDataAccessNameKey: String
+    public static func accessibilityName(
+        operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
+    ) -> String
+
+    @available(macOS 13.0, *)
+    public static func localizedAccessibilityName(
+        localeIdentifier: String? = nil,
+        operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
+    ) -> String
 }
 ```
 

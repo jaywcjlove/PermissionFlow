@@ -83,7 +83,8 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
     static func usesDeviceControlAndDataAccessTitle(
         operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
     ) -> Bool {
-        operatingSystemVersion.majorVersion >= 27
+        PermissionFlowResources.accessibilityName(operatingSystemVersion: operatingSystemVersion)
+            == PermissionFlowResources.deviceControlAndDataAccessNameKey
     }
 
     /// Returns the localized permission name for the requested locale.
@@ -99,17 +100,9 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
                 localeIdentifier: localeIdentifier
             )
         case .accessibility:
-            if Self.usesDeviceControlAndDataAccessTitle(operatingSystemVersion: operatingSystemVersion) {
-                return PermissionFlowLocalizer.string(
-                    "permission_flow.pane.device_control_and_data_access",
-                    defaultValue: "Device Control and Data Access",
-                    localeIdentifier: localeIdentifier
-                )
-            }
-            return PermissionFlowLocalizer.string(
-                "permission_flow.pane.accessibility",
-                defaultValue: "Accessibility",
-                localeIdentifier: localeIdentifier
+            return PermissionFlowResources.localizedAccessibilityName(
+                localeIdentifier: localeIdentifier,
+                operatingSystemVersion: operatingSystemVersion
             )
         case .bluetooth:
             return PermissionFlowLocalizer.string(

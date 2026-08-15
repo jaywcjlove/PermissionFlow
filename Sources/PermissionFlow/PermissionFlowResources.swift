@@ -24,6 +24,56 @@ public enum PermissionFlowResources {
     /// fails so public API remains non-crashing in installed apps.
     public static var bundle: Bundle { packageBundle ?? .main }
 
+    /// Localization key for the Accessibility privacy page title on
+    /// macOS versions before 27.
+    public static let accessibilityNameKey = "permission_flow.pane.accessibility"
+
+    /// Localization key for the Accessibility privacy page title on
+    /// macOS 27 and later, where System Settings labels the page
+    /// "Device Control and Data Access".
+    public static let deviceControlAndDataAccessNameKey = "permission_flow.pane.device_control_and_data_access"
+
+    /// Localization key for the System Settings Accessibility page name.
+    ///
+    /// Returns `deviceControlAndDataAccessNameKey` on macOS 27 and later,
+    /// and `accessibilityNameKey` on earlier versions. The settings URL
+    /// and `Privacy_Accessibility` anchor are unchanged.
+    public static func accessibilityName(
+        operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
+    ) -> String {
+        if operatingSystemVersion.majorVersion >= 27 {
+            return deviceControlAndDataAccessNameKey
+        }
+        return accessibilityNameKey
+    }
+
+#if os(macOS)
+    /// Localized System Settings label for the Accessibility privacy page.
+    ///
+    /// Use this in host UI when you only need to show the current page name:
+    /// "Device Control and Data Access" on macOS 27+, "Accessibility" earlier.
+    ///
+    /// ```swift
+    /// Text(PermissionFlowResources.localizedAccessibilityName())
+    /// Text(PermissionFlowResources.localizedAccessibilityName(localeIdentifier: locale.identifier))
+    /// ```
+    @available(macOS 13.0, *)
+    public static func localizedAccessibilityName(
+        localeIdentifier: String? = nil,
+        operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
+    ) -> String {
+        let nameKey = accessibilityName(operatingSystemVersion: operatingSystemVersion)
+        let defaultValue = nameKey == deviceControlAndDataAccessNameKey
+            ? "Device Control and Data Access"
+            : "Accessibility"
+        return PermissionFlowLocalizer.string(
+            nameKey,
+            defaultValue: defaultValue,
+            localeIdentifier: localeIdentifier
+        )
+    }
+#endif
+
     private static let resolvedPackageBundle: Bundle? = findPackageResourceBundle()
 
     private static func findPackageResourceBundle() -> Bundle? {
