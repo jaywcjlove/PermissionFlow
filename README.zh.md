@@ -913,23 +913,25 @@ let title = bundle.localizedString(
 )
 ```
 
-宿主界面要显示辅助功能隐私页名称时，直接用本地化方法。macOS 27 起系统设置将该页标为 **设备控制和数据访问**（Device Control and Data Access）；更早版本仍是 **辅助功能**（Accessibility）。设置 URL 和 `Privacy_Accessibility` 锚点不变。
+宿主界面要显示辅助功能隐私页名称时，用 `accessibilityNameResource`。它是绑在包资源 bundle 上的 `LocalizedStringResource`，SwiftUI 会自动跟随**主应用语言**。macOS 27 起系统设置将该页标为 **设备控制和数据访问**（Device Control and Data Access）；更早版本仍是 **辅助功能**（Accessibility）。设置 URL 和 `Privacy_Accessibility` 锚点不变。
 
 ```swift
 import PermissionFlow
 import SwiftUI
 
-// 最简单：已本地化的显示名
-Text(PermissionFlowResources.localizedAccessibilityName())
+// SwiftUI：跟随主应用语言（主应用中文 → 中文名称）
+Text(PermissionFlowResources.accessibilityNameResource)
+```
 
-// 跟随 SwiftUI environment locale
-@Environment(\.locale) private var locale
+AppKit 里用 `String(localized:)` 收成 `String`：
 
-Text(
-    PermissionFlowResources.localizedAccessibilityName(
-        localeIdentifier: locale.identifier
-    )
-)
+```swift
+import AppKit
+import PermissionFlow
+
+let name = String(localized: PermissionFlowResources.accessibilityNameResource)
+label.stringValue = name
+button.title = name
 ```
 
 如果要自己查字符串，`accessibilityName()` 会返回对应的本地化 key：
@@ -938,12 +940,6 @@ Text(
 let key = PermissionFlowResources.accessibilityName()
 // macOS 27+： "permission_flow.pane.device_control_and_data_access"
 // 更早版本： "permission_flow.pane.accessibility"
-
-let name = PermissionFlowResources.bundle.localizedString(
-    forKey: key,
-    value: "辅助功能",
-    table: nil
-)
 ```
 
 ```swift
@@ -957,12 +953,10 @@ public enum PermissionFlowResources {
     public static func accessibilityName(
         operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
     ) -> String
-
-    @available(macOS 13.0, *)
-    public static func localizedAccessibilityName(
-        localeIdentifier: String? = nil,
-        operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
-    ) -> String
+    public static var accessibilityNameResource: LocalizedStringResource { get }
+    public static func accessibilityNameResource(
+        operatingSystemVersion: OperatingSystemVersion
+    ) -> LocalizedStringResource
 }
 ```
 

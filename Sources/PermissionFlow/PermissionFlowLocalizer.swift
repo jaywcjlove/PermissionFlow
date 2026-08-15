@@ -16,7 +16,11 @@ enum PermissionFlowLocalizer {
             return defaultValue
         }
 
-        if let localized = localizedBundle(for: localeIdentifier, in: packageBundle) {
+        let resolvedLocaleIdentifier = localeIdentifier
+            ?? Locale.preferredLanguages.first
+            ?? Locale.current.identifier
+
+        if let localized = localizedBundle(for: resolvedLocaleIdentifier, in: packageBundle) {
             return localized.localizedString(forKey: key, value: defaultValue, table: nil)
         }
 

@@ -62,22 +62,12 @@ func accessibilityPaneTitleFollowsSystemSettingsRename() {
         ) == "裝置控制和資料取用"
     )
     #expect(
-        PermissionFlowResources.localizedAccessibilityName(
-            localeIdentifier: "en",
-            operatingSystemVersion: macOS26
-        ) == "Accessibility"
+        PermissionFlowResources.accessibilityNameResource(operatingSystemVersion: macOS26).key
+            == PermissionFlowResources.accessibilityNameKey
     )
     #expect(
-        PermissionFlowResources.localizedAccessibilityName(
-            localeIdentifier: "en",
-            operatingSystemVersion: macOS27
-        ) == "Device Control and Data Access"
-    )
-    #expect(
-        PermissionFlowResources.localizedAccessibilityName(
-            localeIdentifier: "zh-Hans",
-            operatingSystemVersion: macOS27
-        ) == "设备控制和数据访问"
+        PermissionFlowResources.accessibilityNameResource(operatingSystemVersion: macOS27).key
+            == PermissionFlowResources.deviceControlAndDataAccessNameKey
     )
 }
 

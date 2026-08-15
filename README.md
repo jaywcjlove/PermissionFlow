@@ -919,23 +919,25 @@ let title = bundle.localizedString(
 )
 ```
 
-To show the Accessibility privacy page name in host UI, use the localized helper. On macOS 27 and later System Settings labels this page **Device Control and Data Access**; earlier versions still use **Accessibility**. The settings URL and `Privacy_Accessibility` anchor are unchanged.
+To show the Accessibility privacy page name in host UI, use `accessibilityNameResource`. It is a `LocalizedStringResource` backed by the package bundle, so SwiftUI follows the **host app locale** automatically. On macOS 27 and later System Settings labels this page **Device Control and Data Access**; earlier versions still use **Accessibility**. The settings URL and `Privacy_Accessibility` anchor are unchanged.
 
 ```swift
 import PermissionFlow
 import SwiftUI
 
-// Simplest: already-localized display name
-Text(PermissionFlowResources.localizedAccessibilityName())
+// SwiftUI: follows the host app language (Chinese host → Chinese label)
+Text(PermissionFlowResources.accessibilityNameResource)
+```
 
-// Follow the SwiftUI environment locale
-@Environment(\.locale) private var locale
+In AppKit, resolve it to a `String` with `String(localized:)`:
 
-Text(
-    PermissionFlowResources.localizedAccessibilityName(
-        localeIdentifier: locale.identifier
-    )
-)
+```swift
+import AppKit
+import PermissionFlow
+
+let name = String(localized: PermissionFlowResources.accessibilityNameResource)
+label.stringValue = name
+button.title = name
 ```
 
 If you look up strings yourself, `accessibilityName()` returns the matching localization key:
@@ -944,12 +946,6 @@ If you look up strings yourself, `accessibilityName()` returns the matching loca
 let key = PermissionFlowResources.accessibilityName()
 // macOS 27+: "permission_flow.pane.device_control_and_data_access"
 // earlier:   "permission_flow.pane.accessibility"
-
-let name = PermissionFlowResources.bundle.localizedString(
-    forKey: key,
-    value: "Accessibility",
-    table: nil
-)
 ```
 
 ```swift
@@ -963,12 +959,10 @@ public enum PermissionFlowResources {
     public static func accessibilityName(
         operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
     ) -> String
-
-    @available(macOS 13.0, *)
-    public static func localizedAccessibilityName(
-        localeIdentifier: String? = nil,
-        operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
-    ) -> String
+    public static var accessibilityNameResource: LocalizedStringResource { get }
+    public static func accessibilityNameResource(
+        operatingSystemVersion: OperatingSystemVersion
+    ) -> LocalizedStringResource
 }
 ```
 

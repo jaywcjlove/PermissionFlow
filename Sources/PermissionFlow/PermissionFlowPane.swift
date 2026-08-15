@@ -100,9 +100,16 @@ public enum PermissionFlowPane: String, CaseIterable, Codable, Sendable {
                 localeIdentifier: localeIdentifier
             )
         case .accessibility:
-            return PermissionFlowResources.localizedAccessibilityName(
-                localeIdentifier: localeIdentifier,
+            let nameKey = PermissionFlowResources.accessibilityName(
                 operatingSystemVersion: operatingSystemVersion
+            )
+            let defaultValue = nameKey == PermissionFlowResources.deviceControlAndDataAccessNameKey
+                ? "Device Control and Data Access"
+                : "Accessibility"
+            return PermissionFlowLocalizer.string(
+                nameKey,
+                defaultValue: defaultValue,
+                localeIdentifier: localeIdentifier
             )
         case .bluetooth:
             return PermissionFlowLocalizer.string(

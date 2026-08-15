@@ -47,32 +47,28 @@ public enum PermissionFlowResources {
         return accessibilityNameKey
     }
 
-#if os(macOS)
-    /// Localized System Settings label for the Accessibility privacy page.
+    /// SwiftUI-ready resource that follows the host app locale automatically.
     ///
-    /// Use this in host UI when you only need to show the current page name:
-    /// "Device Control and Data Access" on macOS 27+, "Accessibility" earlier.
+    /// Prefer this in host UI:
     ///
     /// ```swift
-    /// Text(PermissionFlowResources.localizedAccessibilityName())
-    /// Text(PermissionFlowResources.localizedAccessibilityName(localeIdentifier: locale.identifier))
+    /// Text(PermissionFlowResources.accessibilityNameResource)
     /// ```
-    @available(macOS 13.0, *)
-    public static func localizedAccessibilityName(
-        localeIdentifier: String? = nil,
-        operatingSystemVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
-    ) -> String {
-        let nameKey = accessibilityName(operatingSystemVersion: operatingSystemVersion)
-        let defaultValue = nameKey == deviceControlAndDataAccessNameKey
-            ? "Device Control and Data Access"
-            : "Accessibility"
-        return PermissionFlowLocalizer.string(
-            nameKey,
-            defaultValue: defaultValue,
-            localeIdentifier: localeIdentifier
+    public static var accessibilityNameResource: LocalizedStringResource {
+        accessibilityNameResource(
+            operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersion
         )
     }
-#endif
+
+    /// Same as `accessibilityNameResource`, with an explicit OS version for tests.
+    public static func accessibilityNameResource(
+        operatingSystemVersion: OperatingSystemVersion
+    ) -> LocalizedStringResource {
+        LocalizedStringResource(
+            String.LocalizationValue(accessibilityName(operatingSystemVersion: operatingSystemVersion)),
+            bundle: .atURL(bundle.bundleURL)
+        )
+    }
 
     private static let resolvedPackageBundle: Bundle? = findPackageResourceBundle()
 
