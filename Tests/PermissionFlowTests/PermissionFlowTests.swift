@@ -4,6 +4,7 @@ import Testing
 @testable import PermissionFlow
 @testable import SystemSettingsKit
 #if os(macOS)
+import AppKit
 @testable import PermissionFlowStatusStore
 #endif
 
@@ -273,5 +274,51 @@ func statusStoreTrackSeedsMissingPanesWithoutImmediateRefresh() {
     #expect(publishCount == 1)
     _ = cancellable
 }
+
+@Test
+@MainActor
+func statusStoreRefreshesWhenAppBecomesActive() async {
+    let pane = PermissionFlowPane.appManagement
+    let previous = PermissionStatusRegistry.provider(for: pane)
+    let mock = MutablePermissionStatusProvider(authorizationStateValue: .notGranted)
+    PermissionStatusRegistry.register(provider: mock, for: pane)
+    defer { PermissionStatusRegistry.register(provider: previous, for: pane) }
+
+    let store = PermissionFlowStatusStore(panes: [pane], refreshOnAppActivation: true)
+    #expect(store.states[pane] == .notGranted)
+
+    mock.authorizationStateValue = .granted
+    NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: nil)
+
+    for _ in 0..<5 {
+        if store.states[pane] == .granted { break }
+        await waitForNextRunLoop()
+    }
+
+    #expect(store.states[pane] == .granted)
+}
+
+private final class MutablePermissionStatusProvider: PermissionStatusProviding, @unchecked Sendable {
+    var capability: PermissionStatusCapability { .preflightSupported }
+    var authorizationStateValue: PermissionAuthorizationState
+
+    init(authorizationStateValue: PermissionAuthorizationState) {
+        self.authorizationStateValue = authorizationStateValue
+    }
+
+    func authorizationState() -> PermissionAuthorizationState {
+        authorizationStateValue
+    }
+}
+
+@MainActor
+private func waitForNextRunLoop() async {
+    await withCheckedContinuation { continuation in
+        DispatchQueue.main.async {
+            continuation.resume()
+        }
+    }
+}
 #endif
+
 

@@ -25,7 +25,11 @@ public final class PermissionFlowStatusStore: ObservableObject {
             didBecomeActiveCancellable = NotificationCenter.default
                 .publisher(for: NSApplication.didBecomeActiveNotification)
                 .sink { [weak self] _ in
-                    self?.scheduleRefresh()
+                    // Combine delivers on the posting thread, not the MainActor
+                    // executor. Hop first, then leave the current view-update turn.
+                    Task { @MainActor [weak self] in
+                        await self?.refreshAfterCurrentUpdate()
+                    }
                 }
         }
     }
@@ -61,14 +65,16 @@ public final class PermissionFlowStatusStore: ObservableObject {
         apply(seed)
     }
 
-    /// `didBecomeActive` is delivered on the main thread, often mid-render.
-    /// `Task { @MainActor in }` can resume inline and publish during a view update.
-    private func scheduleRefresh() {
-        DispatchQueue.main.async { [weak self] in
-            MainActor.assumeIsolated {
-                self?.refresh()
+    /// Waits one main-queue turn so `@Published` does not fire mid-render.
+    /// `DispatchQueue.main` is not the MainActor executor, so do not
+    /// `assumeIsolated` in that callback — it can drop the refresh.
+    private func refreshAfterCurrentUpdate() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            DispatchQueue.main.async {
+                continuation.resume()
             }
         }
+        refresh()
     }
 
     private func apply(_ updates: [PermissionFlowPane: PermissionAuthorizationState]) {
