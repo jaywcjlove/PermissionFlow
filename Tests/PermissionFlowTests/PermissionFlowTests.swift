@@ -1,7 +1,11 @@
+import Combine
 import Foundation
 import Testing
 @testable import PermissionFlow
 @testable import SystemSettingsKit
+#if os(macOS)
+@testable import PermissionFlowStatusStore
+#endif
 
 @Test
 func paneURLsUseSecuritySettingsDeepLink() {
@@ -214,3 +218,60 @@ func controllerAcceptsOnlyUniqueAppBundles() {
 
     #expect(controller.droppedApps == [appURL])
 }
+
+#if os(macOS)
+@Test
+@MainActor
+func statusStoreInitPublishesRealStatesWithoutASecondWrite() {
+    let store = PermissionFlowStatusStore(
+        panes: [.accessibility],
+        refreshOnAppActivation: false
+    )
+
+    let expected = PermissionStatusRegistry.provider(for: .accessibility).authorizationState()
+    #expect(store.states[.accessibility] == expected)
+    #expect(store.state(for: .accessibility) == expected)
+}
+
+@Test
+@MainActor
+func statusStoreRefreshDoesNotPublishWhenStatesAreUnchanged() {
+    let store = PermissionFlowStatusStore(
+        panes: [.accessibility],
+        refreshOnAppActivation: false
+    )
+    var publishCount = 0
+    let cancellable = store.objectWillChange.sink { _ in
+        publishCount += 1
+    }
+
+    store.refresh()
+    store.refresh(.accessibility)
+
+    #expect(publishCount == 0)
+    _ = cancellable
+}
+
+@Test
+@MainActor
+func statusStoreTrackSeedsMissingPanesWithoutImmediateRefresh() {
+    let store = PermissionFlowStatusStore(
+        panes: [.accessibility],
+        refreshOnAppActivation: false
+    )
+    var publishCount = 0
+    let cancellable = store.objectWillChange.sink { _ in
+        publishCount += 1
+    }
+
+    store.track([.accessibility, .fullDiskAccess], refreshImmediately: false)
+
+    #expect(store.states[.fullDiskAccess] == .checking)
+    #expect(publishCount == 1)
+
+    store.track([.accessibility, .fullDiskAccess], refreshImmediately: false)
+    #expect(publishCount == 1)
+    _ = cancellable
+}
+#endif
+

@@ -105,6 +105,7 @@ let package = Package(
             dependencies: [
                 "PermissionFlow",
                 "SystemSettingsKit",
+                "PermissionFlowStatusStore",
                 "PermissionFlowExtendedStatus"
             ]
         ),
