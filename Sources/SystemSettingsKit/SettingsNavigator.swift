@@ -13,7 +13,7 @@ final class SettingsNavigator {
         NSWorkspace.shared.openApplication(
             at: applicationURL,
             configuration: NSWorkspace.OpenConfiguration()
-        ) { _, _ in }
+        ) { @Sendable _, _ in }  // Called off the main thread: not main-actor.
 
         let didOpen = NSWorkspace.shared.open(url)
         activateSettings()
