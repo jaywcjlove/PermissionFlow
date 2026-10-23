@@ -1,4 +1,5 @@
 "permission_flow.panel.title" = "將 **%@** 拖到上方列表中以允許 **%@**。";
+"permission_flow.panel.opening_settings" = "正在打開系統設定...";
 "permission_flow.app.this_app" = "此 App";
 "permission_flow.pane.permission" = "權限";
 "permission_flow.pane.app_management" = "App 管理";

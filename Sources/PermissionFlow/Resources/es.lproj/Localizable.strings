@@ -1,4 +1,5 @@
 "permission_flow.panel.title" = "Arrastra **%@** a la lista superior para permitir **%@**.";
+"permission_flow.panel.opening_settings" = "Abriendo Configuración del Sistema...";
 "permission_flow.app.this_app" = "Esta app";
 "permission_flow.pane.permission" = "Permiso";
 "permission_flow.pane.app_management" = "Gestión de apps";

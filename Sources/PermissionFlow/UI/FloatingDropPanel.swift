@@ -24,13 +24,19 @@ final class FloatingDropPanel: NSPanel {
     private let animationDuration: TimeInterval = 0.72
     private let animationResponse: Double = 0.72
     private let initialAlpha: CGFloat = 0.9
-    private let minimumLaunchScale: CGFloat = 0.58
     private var launchTimer: Timer?
+    private var launchRevealTask: Task<Void, Never>?
     private var launchStartTime: CFTimeInterval = 0
+    private var launchAnchor = CGPoint.zero
     private var launchFromFrame = NSRect.zero
     private var launchToFrame = NSRect.zero
     private var isAnimatingLaunch = false
     private var localeIdentifier: String?
+
+    isolated deinit {
+        launchTimer?.invalidate()
+        launchRevealTask?.cancel()
+    }
 
     init(controller: PermissionFlowController) {
         panelController = controller
@@ -82,11 +88,17 @@ final class FloatingDropPanel: NSPanel {
     func updateLocaleIdentifier(_ localeIdentifier: String?) {
         guard self.localeIdentifier != localeIdentifier else { return }
         self.localeIdentifier = localeIdentifier
+        rebuildContent()
+        setContentSize(CGSize(width: frame.width, height: measuredPanelHeight(for: frame.width)))
+    }
+
+    /// Rebuilds the SwiftUI roots so a just-changed controller flag, such as
+    /// the loading state, is measured before the next frame change.
+    func rebuildContent() {
         guard let panelController else { return }
         let panelView = Self.makePanelView(controller: panelController, localeIdentifier: localeIdentifier)
         hostingView.rootView = panelView
         sizingView.rootView = panelView
-        setContentSize(CGSize(width: frame.width, height: measuredPanelHeight(for: frame.width)))
     }
 
     /// The panel intentionally stays non-activating so System Settings remains
@@ -120,50 +132,67 @@ final class FloatingDropPanel: NSPanel {
 
     /// Shows the panel at its current frame without any positioning changes.
     func show() {
+        layoutForDisplay()
+        alphaValue = 1
+        hasShadow = true
         orderFrontRegardless()
     }
 
-    /// Displays the panel at the source frame used to start the launch motion.
-    /// This is used before the target System Settings frame is known.
-    func show(at sourceFrameInScreen: CGRect) {
+    /// Shows a full-size panel at the click anchor while System Settings is
+    /// still launching. The caller switches the content to the loading state
+    /// before this runs, and the window uses that content's measured size.
+    func showWaiting(anchoredAt sourceFrameInScreen: CGRect?) {
         stopLaunchAnimation()
         isAnimatingLaunch = false
-        alphaValue = 1
-        setContentSize(CGSize(width: frame.width, height: measuredPanelHeight(for: frame.width)))
-        setFrame(launchSourceFrame(for: sourceFrameInScreen), display: false)
-        orderFrontRegardless()
+        let size = CGSize(width: initialPanelWidth, height: measuredPanelHeight(for: initialPanelWidth))
+        let panelFrame: CGRect
+        if let sourceFrameInScreen, sourceFrameInScreen.isEmpty == false {
+            let anchor = CGPoint(x: sourceFrameInScreen.midX, y: sourceFrameInScreen.midY)
+            panelFrame = launchSourceFrame(size: size, anchor: anchor)
+        } else {
+            panelFrame = centeredFrame(size: size)
+        }
+        place(at: panelFrame, alpha: 1)
     }
 
     /// Animates the panel from the triggering UI element toward the current
     /// System Settings window frame once the destination becomes available.
+    ///
+    /// The panel stays at the destination's content size for the whole flight.
+    /// Shrinking the NSPanel below the hosting view used to clip the title and
+    /// drag card into a partial rectangle until a later settings-frame update
+    /// resized it. A panel that is already on screen (the loading state) keeps
+    /// its alpha and flies from the click anchor. The first appearance of a
+    /// hidden panel waits one turn so SwiftUI can commit the drag card.
     func present(from sourceFrameInScreen: CGRect, to settingsFrame: CGRect) {
         stopLaunchAnimation()
-        let targetFrame = targetFrame(for: settingsFrame)
+        let destination = targetFrame(for: settingsFrame)
 
         guard sourceFrameInScreen.isEmpty == false else {
             isAnimatingLaunch = false
-            alphaValue = 1
-            setFrame(targetFrame, display: false)
-            orderFrontRegardless()
+            place(at: destination, alpha: 1)
             return
         }
 
+        let alreadyVisible = isVisible && alphaValue > 0.01
         isAnimatingLaunch = true
-        launchFromFrame = launchSourceFrame(for: sourceFrameInScreen)
-        launchToFrame = targetFrame
-        launchStartTime = CACurrentMediaTime()
-        alphaValue = initialAlpha
-        setFrame(launchFromFrame, display: false)
-        orderFrontRegardless()
-        stepLaunchAnimation()
+        launchAnchor = CGPoint(x: sourceFrameInScreen.midX, y: sourceFrameInScreen.midY)
+        launchToFrame = destination
+        launchFromFrame = launchSourceFrame(size: destination.size, anchor: launchAnchor)
 
-        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.stepLaunchAnimation()
+        guard alreadyVisible else {
+            alphaValue = 0
+            place(at: launchFromFrame, alpha: 0)
+            launchRevealTask = Task { @MainActor [weak self] in
+                self?.beginVisibleLaunchAnimation()
             }
+            return
         }
-        RunLoop.main.add(timer, forMode: .common)
-        launchTimer = timer
+
+        place(at: launchFromFrame, alpha: 1)
+        launchStartTime = CACurrentMediaTime()
+        stepLaunchAnimation()
+        startLaunchTimer()
     }
 
     /// Switches the panel into a drag-friendly mode where mouse events pass
@@ -191,7 +220,11 @@ final class FloatingDropPanel: NSPanel {
         }
 
         stopLaunchAnimation()
-        setFrame(target, display: false)
+        let sizeChanged = abs(frame.width - target.width) > 0.5 || abs(frame.height - target.height) > 0.5
+        setFrame(target, display: sizeChanged)
+        if sizeChanged {
+            layoutForDisplay()
+        }
         orderFrontRegardless()
     }
 
@@ -242,19 +275,104 @@ final class FloatingDropPanel: NSPanel {
     }
 
     /// Builds the starting frame for the launch animation around the source UI
-    /// element that initiated the permission flow.
-    private func launchSourceFrame(for sourceFrameInScreen: CGRect) -> CGRect {
-        let launchSize = CGSize(
-            width: max(sourceFrameInScreen.width, frame.width * minimumLaunchScale),
-            height: max(sourceFrameInScreen.height, frame.height * minimumLaunchScale)
+    /// element. `size` is the full measured panel size, never a scaled-down
+    /// stand-in, so the hosting view is not clipped on the way in.
+    private func launchSourceFrame(size: CGSize, anchor: CGPoint) -> CGRect {
+        let unclamped = CGRect(
+            x: anchor.x - (size.width * 0.5),
+            y: anchor.y - (size.height * 0.5),
+            width: size.width,
+            height: size.height
         )
-        let center = CGPoint(x: sourceFrameInScreen.midX, y: sourceFrameInScreen.midY)
-        return CGRect(
-            x: center.x - (launchSize.width * 0.5),
-            y: center.y - (launchSize.height * 0.5),
-            width: launchSize.width,
-            height: launchSize.height
+        return clampedToVisibleFrame(unclamped)
+    }
+
+    private func centeredFrame(size: CGSize) -> CGRect {
+        let screen = NSScreen.main?.visibleFrame ?? CGRect(origin: .zero, size: size)
+        return clampedToVisibleFrame(
+            CGRect(
+                x: screen.midX - (size.width * 0.5),
+                y: screen.midY - (size.height * 0.5),
+                width: size.width,
+                height: size.height
+            )
         )
+    }
+
+    /// Moves a frame on screen without changing its size, so a panel that
+    /// starts near a screen edge is not cut off.
+    private func clampedToVisibleFrame(_ rect: CGRect) -> CGRect {
+        let screen = NSScreen.screens
+            .first { $0.visibleFrame.intersects(rect) }?
+            .visibleFrame
+            ?? NSScreen.main?.visibleFrame
+        guard let screen else { return rect }
+
+        var origin = rect.origin
+        let minimumX = screen.minX + screenInset
+        let minimumY = screen.minY + screenInset
+        let maximumX = max(minimumX, screen.maxX - rect.width - screenInset)
+        let maximumY = max(minimumY, screen.maxY - rect.height - screenInset)
+        origin.x = min(max(origin.x, minimumX), maximumX)
+        origin.y = min(max(origin.y, minimumY), maximumY)
+        return CGRect(origin: origin, size: rect.size)
+    }
+
+    /// Lays out the outer hosting view and the nested drag-card hosting view
+    /// before the panel is allowed to become visible.
+    private func layoutForDisplay() {
+        guard let contentView else { return }
+        contentView.layoutSubtreeIfNeeded()
+        layoutHostingViews(in: contentView)
+        displayIfNeeded()
+    }
+
+    private func layoutHostingViews(in view: NSView) {
+        if let hostingView = view as? NSHostingView<AnyView> {
+            hostingView.layoutSubtreeIfNeeded()
+            hostingView.needsDisplay = true
+        }
+        for subview in view.subviews {
+            layoutHostingViews(in: subview)
+        }
+    }
+
+    /// Puts the panel on its frame and paints it before ordering it front.
+    /// `display: false` here used to show a stale backing store: a rectangle
+    /// with the title and drag card only partly drawn.
+    private func place(at panelFrame: CGRect, alpha: CGFloat) {
+        setContentSize(panelFrame.size)
+        setFrame(panelFrame, display: true)
+        layoutForDisplay()
+        alphaValue = alpha
+        ignoresMouseEvents = alpha <= 0
+        // A hidden pre-draw still composites its shadow. That shadow is the
+        // partial rectangle users see before the guide content is ready.
+        hasShadow = alpha > 0
+        orderFrontRegardless()
+    }
+
+    /// Reveals the launch only after SwiftUI has had a turn to commit the
+    /// drag card. Tracking updates that arrive during the wait retarget
+    /// `launchToFrame`; the visible flight then starts from the latest size.
+    private func beginVisibleLaunchAnimation() {
+        guard isAnimatingLaunch, launchTimer == nil, Task.isCancelled == false else { return }
+        launchRevealTask = nil
+        launchFromFrame = launchSourceFrame(size: launchToFrame.size, anchor: launchAnchor)
+        place(at: launchFromFrame, alpha: initialAlpha)
+        launchStartTime = CACurrentMediaTime()
+        stepLaunchAnimation()
+        startLaunchTimer()
+    }
+
+    private func startLaunchTimer() {
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.stepLaunchAnimation()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        launchTimer = timer
     }
 
     /// Measures the SwiftUI content at a specific width so the panel height can
@@ -286,6 +404,14 @@ final class FloatingDropPanel: NSPanel {
     private func stopLaunchAnimation() {
         launchTimer?.invalidate()
         launchTimer = nil
+        launchRevealTask?.cancel()
+        launchRevealTask = nil
+    }
+
+    override func close() {
+        isAnimatingLaunch = false
+        stopLaunchAnimation()
+        super.close()
     }
 
     /// Produces a smooth eased progress value for the launch motion so the

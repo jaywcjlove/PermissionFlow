@@ -24,6 +24,11 @@ public final class PermissionFlowController: ObservableObject {
     /// Drives the header icon animation while the app card is being dragged.
     @Published var isDraggingApp = false
 
+    /// True while System Settings has been asked to open but its window is
+    /// not on screen yet. The floating panel shows a loading state instead of
+    /// the drag guide.
+    @Published var isAwaitingSettingsWindow = false
+
     /// Drives the locale environment used by the floating SwiftUI panel.
     @Published public private(set) var localeIdentifier: String?
 
@@ -77,12 +82,18 @@ public final class PermissionFlowController: ObservableObject {
         guard pane.supportsFloatingAuthorizationPanel else { return }
 
         Self.activeController = self
-        showPanel()
+        // Tracking runs first so an already-open Settings window can be placed
+        // immediately. A cold launch has no frame yet; the panel still appears,
+        // in a loading state, until the window shows up.
         tracker.startTracking(promptIfNeeded: configuration.promptForAccessibilityTrust)
+        showPanel()
     }
 
-    /// Shows the panel immediately. If the target System Settings frame is
-    /// already known, the panel is positioned or animated into place at once.
+    /// Shows the floating guide.
+    ///
+    /// When System Settings is already on screen, the panel flies to that
+    /// window. When it is still launching, the panel appears at the click
+    /// anchor with a loading state instead of waiting invisibly.
     public func showPanel() {
         if panel == nil {
             panel = FloatingDropPanel(controller: self)
@@ -95,16 +106,14 @@ public final class PermissionFlowController: ObservableObject {
             return
         }
 
-        if let sourceFrame = pendingLaunchSourceFrame {
-            panel.show(at: sourceFrame)
-        } else {
-            panel.center()
-            panel.show()
-        }
+        isAwaitingSettingsWindow = true
+        panel.rebuildContent()
+        panel.showWaiting(anchoredAt: pendingLaunchSourceFrame)
     }
 
     public func closePanel(returnToPreviousApp: Bool = false) {
         tracker.stopTracking()
+        isAwaitingSettingsWindow = false
         panel?.close()
         panel = nil
         pendingLaunchSourceFrame = nil
@@ -232,6 +241,11 @@ public final class PermissionFlowController: ObservableObject {
 
     private func presentPanel(_ panel: FloatingDropPanel?, for settingsFrame: CGRect) {
         guard let panel else { return }
+
+        if isAwaitingSettingsWindow {
+            isAwaitingSettingsWindow = false
+            panel.rebuildContent()
+        }
 
         if let sourceFrame = pendingLaunchSourceFrame {
             panel.present(from: sourceFrame, to: settingsFrame)
